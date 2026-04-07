@@ -9,9 +9,9 @@ from typing import List, Dict
 
 class Recommender:
     def __init__(self):
-        base = Path('C:/progs/python/movies/')
+        base = Path(__file__).resolve().parent
         self.tmdb_path = base / 'movies.csv'
-        self.target_cols_path = Path("tfidf.csv")
+        self.target_cols_path = base / 'tfidf.csv'
 
         if not self.tmdb_path.exists():
             raise FileNotFoundError(f"Не найден датасет TMDB: {self.tmdb_path}")
@@ -24,7 +24,6 @@ class Recommender:
 
         print("Загрузка tfidf.csv...")
         self.target_cols = pd.read_csv(self.target_cols_path, index_col=0)
-        # Получаем текстовые строки из первого столбца
         self.text_data = self.target_cols.iloc[:, 0].fillna('')
 
         print("Создание TF-IDF матрицы...")
@@ -110,19 +109,3 @@ class Recommender:
             return []
 
         return self.get_recommendations_by_tmdb_ids(tmdb_ids, k, alpha)
-    
-
-if __name__ == '__main__':
-    rec = Recommender()
-
-    # tmdb_id The Dark Knight = 155
-    result = rec.get_recommendations_by_tmdb_ids([155], k=5)
-    print("\nРекомендации по tmdb_id [155]:")
-    for r in result:
-        print(r)
-
-    # Несколько tmdb_id
-    result2 = rec.get_recommendations_by_tmdb_ids([155, 272], k=5)
-    print("\nРекомендации по tmdb_id [155, 272]:")
-    for r in result2:
-        print(r)

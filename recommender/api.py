@@ -1,16 +1,15 @@
 # ==================== api.py ====================
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from recommender import Recommender
 from pathlib import Path
 import logging
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Глобальная переменная как fallback
 recommender: Recommender | None = None
 
 @asynccontextmanager
@@ -26,10 +25,18 @@ async def lifespan(app: FastAPI):
         logger.error(f"Критическая ошибка при загрузке Recommender: {e}")
         raise
     yield
-    logger.info("👋 Сервер завершает работу")
+    logger.info("Сервер завершает работу")
 
 
 app = FastAPI(lifespan=lifespan, title="Movie Recommender API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class TmdbIdsRequest(BaseModel):

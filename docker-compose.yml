@@ -1,50 +1,42 @@
-version: '3.9'
-
 services:
-  db:
-    image: postgres:16
+  movies_db:
+    image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_DB: movierec
-      POSTGRES_USER: user
+      POSTGRES_DB: movies
+      POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    volumes:
+      - ./movies_db/data:/var/lib/postgresql/data
+      - ./movies_db/init:/docker-entrypoint-initdb.d 
+      - ./movies_db/csv:/csv_data
+
+  users_db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: users
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./users_db/data:/var/lib/postgresql/data
+      - ./users_db/init:/docker-entrypoint-initdb.d 
 
   backend:
     build: ./backend
     restart: always
     ports:
-      - "5000:5000"
+      - "3000:3000"
     depends_on:
-      - db
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: movierec
-      DB_USER: user
-      DB_PASS: password
-      REC_SERVICE_URL: http://rec-service:8000
-      JWT_SECRET: supersecretkeychangeit
-    env_file: .env
+      - movies_db
+      - users_db
 
-  rec-service:
-    build: ./rec-service
+  recommender:
+    build: ./recommender
     restart: always
     ports:
       - "8000:8000"
-    depends_on:
-      - db
-
-  frontend:
-    build: ./frontend
-    restart: always
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-
-volumes:
-  postgres-data:
