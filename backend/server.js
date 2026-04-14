@@ -267,7 +267,6 @@ app.post('/api/favorites/:user_id', async (req, res) => {
 });
 
 
-
 app.delete('/api/favorites/:user_id/:movie_id', async (req, res) => {
     try {
         const user_id = parseInt(req.params.user_id, 10);
@@ -295,6 +294,112 @@ app.delete('/api/favorites/:user_id/:movie_id', async (req, res) => {
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
+
+
+app.get('/api/watch-later/:user_id', async (req, res) => {
+    try {
+        const user_id = parseInt(req.params.user_id, 10);
+        if (isNaN(user_id)) {
+            return res.status(400).json({ error: 'Неверный формат user_id' });
+        }
+
+        const result = await users_pool.query(
+            `SELECT UNNEST(watch_later_movie_ids) AS movie_id 
+            FROM users_fav 
+            WHERE user_id = $1`,
+            [user_id]
+        );
+
+        const movieIds = result.rows.map(row => row.movie_id);
+
+        res.json({
+            user_id,
+            favorite_movies: movieIds,
+            total_count: movieIds.length
+        });
+    } catch (err) {
+        console.error('Ошибка при получении списка "посмотреть позже":', err);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+});
+
+
+app.post('/api/watch-later/:user_id', async (req, res) => {
+    try {
+        const user_id = parseInt(req.params.user_id, 10);
+        const { movies } = req.body;
+        
+        if (!movies || !Array.isArray(movies)) {
+            return res.status(400).json({ error: 'movies is required and must be an array' });
+        }
+        if (isNaN(user_id)) {
+            return res.status(400).json({ error: 'Неверный user_id' });
+        }
+
+        const movieIds = movies.map(m => m.movie_id);
+        
+        const user = await users_pool.query(
+            `SELECT watch_later_movie_ids FROM users_fav WHERE user_id = $1`,
+            [user_id]
+        );
+        
+        if (user.rows.length === 0) {
+            await users_pool.query(
+                `INSERT INTO users_fav (user_id, watch_later_movie_ids) 
+                VALUES ($1, $2)`,
+                [user_id, movieIds]
+            );
+        } else {
+            const current = user.rows[0].favorite_movie_ids || [];
+            const newIds = [...new Set([...current, ...movieIds])];
+            
+            await users_pool.query(
+                `UPDATE users_fav SET watch_later_movie_ids = $1 WHERE user_id = $2`,
+                [newIds, user_id]
+            );
+        }
+        
+        res.json({
+            status: 'success',
+            message: `Processed ${movies.length} movies`,
+            added_count: movieIds.length
+        });
+        
+    } catch (err) {
+        console.error('Ошибка добавления в список "посмотреть позже":', err);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+});
+
+
+app.delete('/api/watch-later/:user_id/:movie_id', async (req, res) => {
+    try {
+        const user_id = parseInt(req.params.user_id, 10);
+        const movie_id = parseInt(req.params.movie_id, 10);
+        
+        const result = await users_pool.query(
+            `UPDATE users_fav 
+            SET watch_later_movie_ids = ARRAY_REMOVE(watch_later_movie_ids, $1) 
+            WHERE user_id = $2 AND $1 = ANY(watch_later_movie_ids)
+            RETURNING favorite_movie_ids`,
+            [movie_id, user_id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Movie not in watch later list' });
+        }
+        
+        res.json({
+            status: 'success',
+            message: `Movie ${movie_id} removed`,
+            remaining_count: result.rows[0].favorite_movie_ids.length
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+});
+
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
