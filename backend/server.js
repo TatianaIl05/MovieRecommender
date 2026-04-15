@@ -43,7 +43,7 @@ async function connectToMovies() {
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
     }
-    console.error('❌ Не удалось подключиться к movies');
+    console.error('Не удалось подключиться к movies');
     process.exit(1);
 }
 
@@ -345,14 +345,14 @@ app.post('/api/watch-later/:user_id', async (req, res) => {
         
         if (user.rows.length === 0) {
             await users_pool.query(
-                `INSERT INTO users_fav (user_id, watch_later_movie_ids) 
+                `INSERT INTO users_fav (user_id, watch_later_movie_ids)
                 VALUES ($1, $2)`,
                 [user_id, movieIds]
             );
         } else {
-            const current = user.rows[0].favorite_movie_ids || [];
+            const current = user.rows[0].watch_later_movie_ids || [];
             const newIds = [...new Set([...current, ...movieIds])];
-            
+
             await users_pool.query(
                 `UPDATE users_fav SET watch_later_movie_ids = $1 WHERE user_id = $2`,
                 [newIds, user_id]
@@ -376,23 +376,23 @@ app.delete('/api/watch-later/:user_id/:movie_id', async (req, res) => {
     try {
         const user_id = parseInt(req.params.user_id, 10);
         const movie_id = parseInt(req.params.movie_id, 10);
-        
+
         const result = await users_pool.query(
-            `UPDATE users_fav 
-            SET watch_later_movie_ids = ARRAY_REMOVE(watch_later_movie_ids, $1) 
+            `UPDATE users_fav
+            SET watch_later_movie_ids = ARRAY_REMOVE(watch_later_movie_ids, $1)
             WHERE user_id = $2 AND $1 = ANY(watch_later_movie_ids)
-            RETURNING favorite_movie_ids`,
+            RETURNING watch_later_movie_ids`,
             [movie_id, user_id]
         );
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Movie not in watch later list' });
         }
-        
+
         res.json({
             status: 'success',
             message: `Movie ${movie_id} removed`,
-            remaining_count: result.rows[0].favorite_movie_ids.length
+            remaining_count: result.rows[0].watch_later_movie_ids.length
         });
     } catch (err) {
         console.error(err);
