@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 
-const RECOMMENDER_URL = 'http://localhost:8000'
+const RECOMMENDER_URL = '/recommender'
 
 function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater }) {
   const [movies, setMovies] = useState([])

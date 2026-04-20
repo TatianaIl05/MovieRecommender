@@ -22,13 +22,14 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 (async () => {
     await connectToMovies();
     await connectToUsers();
 
-    app.listen(PORT, () => {
-        console.log(`Server running: http://localhost:${PORT}`);
+    app.listen(PORT, HOST, () => {
+        console.log(`Server running on ${HOST}:${PORT}`);
     });
 })();

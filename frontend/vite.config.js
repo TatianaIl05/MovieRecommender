@@ -10,7 +10,16 @@ export default defineConfig({
       '/api': {
         target: 'http://backend:3000',
         changeOrigin: true
+      },
+      '/recommender': {
+        target: 'http://recommender:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/recommender/, '')
       }
     }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false
   }
 })
