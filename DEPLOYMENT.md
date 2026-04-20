@@ -1,25 +1,25 @@
-# Production Deployment Guide
+# Руководство по развертыванию на Production
 
-## Architecture
+## Архитектура
 
-- **nginx** - reverse proxy on host (port 80/443)
-- **backend** - Node.js/Express in Docker (port 3000)
-- **recommender** - Python/FastAPI in Docker (port 8000)
-- **movies_db** - PostgreSQL in Docker (port 5432)
-- **users_db** - PostgreSQL in Docker (port 5433)
+- **nginx** - reverse proxy на хосте (порты 80/443)
+- **backend** - Node.js/Express в Docker (порт 3000)
+- **recommender** - Python/FastAPI в Docker (порт 8000)
+- **movies_db** - PostgreSQL в Docker (порт 5432)
+- **users_db** - PostgreSQL в Docker (порт 5433)
 
-## Prerequisites
+## Предварительные требования
 
-1. Domain: `movierecommender.icu` pointing to server IP
-2. SSL certificates in `/etc/nginx/ssl/`:
-   - `movierecommender.icu.crt`
-   - `movierecommender.icu.key`
-3. Docker and Docker Compose installed
-4. nginx installed on host
+1. Домен: `movierecommender.icu` указывает на IP сервера
+2. SSL сертификаты в `/etc/letsencrypt/live/movierecommender.icu/`:
+   - `fullchain.pem`
+   - `privkey.pem`
+3. Docker и Docker Compose установлены
+4. nginx установлен на хосте
 
-## Setup Steps
+## Этапы развертывания
 
-### 1. Copy nginx configuration
+### 1. Копирование конфигурации nginx
 
 ```bash
 sudo cp nginx/movierecommender.icu.conf /etc/nginx/sites-available/
@@ -28,19 +28,19 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-### 2. Build and start Docker services
+### 2. Запуск Docker сервисов
 
 ```bash
 docker-compose up --build -d
 ```
 
-This starts:
-- movies_db (PostgreSQL on 5432)
-- users_db (PostgreSQL on 5433)
-- backend (Node.js on 3000)
-- recommender (FastAPI on 8000)
+Запускает:
+- movies_db (PostgreSQL на 5432)
+- users_db (PostgreSQL на 5433)
+- backend (Node.js на 3000)
+- recommender (FastAPI на 8000)
 
-### 3. Build frontend and copy to nginx
+### 3. Сборка frontend и копирование в nginx
 
 ```bash
 cd frontend
@@ -51,7 +51,9 @@ sudo cp -r dist/* /var/www/movierecommender/
 sudo chown -R www-data:www-data /var/www/movierecommender
 ```
 
-### 4. Verify services
+**Важно:** Файлы копируются напрямую в `/var/www/movierecommender/` (не в `/var/www/movierecommender/dist/`)
+
+### 4. Проверка сервисов
 
 ```bash
 curl http://localhost:3000/health
@@ -59,63 +61,64 @@ curl http://localhost:8000/health
 curl https://movierecommender.icu
 ```
 
-## SSL Certificate Setup
+## Настройка SSL сертификата
 
-### Using Let's Encrypt (Recommended)
+### Использование Let's Encrypt (Рекомендуется)
 
 ```bash
 sudo apt-get install certbot python3-certbot-nginx
 sudo certbot certonly --nginx -d movierecommender.icu -d www.movierecommender.icu
 ```
 
-Certificates will be in `/etc/letsencrypt/live/movierecommender.icu/`
+Сертификаты будут в `/etc/letsencrypt/live/movierecommender.icu/`
 
-Update nginx config paths:
+Пути в nginx конфиге уже указаны правильно:
 ```nginx
 ssl_certificate /etc/letsencrypt/live/movierecommender.icu/fullchain.pem;
 ssl_certificate_key /etc/letsencrypt/live/movierecommender.icu/privkey.pem;
 ```
 
-### Auto-renewal
+### Автоматическое обновление
 
 ```bash
 sudo systemctl enable certbot.timer
 sudo systemctl start certbot.timer
 ```
 
-## Environment Variables
+## Переменные окружения
 
-Backend uses Docker Compose service names for database connections (already configured in `docker-compose.yml`).
+Backend использует имена сервисов Docker для подключения к БД (уже настроено в `docker-compose.yml`).
 
-Frontend environment variables are set during build via `.env.production`.
+Frontend переменные окружения устанавливаются во время сборки через `.env.production`.
 
-## Monitoring
+## Мониторинг
 
-Check service logs:
+Просмотр логов сервисов:
 
 ```bash
+# Docker сервисы
 docker-compose logs -f backend
 docker-compose logs -f recommender
 docker-compose logs -f movies_db
 docker-compose logs -f users_db
 ```
 
-Check nginx logs:
+Просмотр логов nginx:
 
 ```bash
 sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```
 
-## Updating
+## Обновление
 
-### Update backend/recommender
+### Обновление backend/recommender
 
 ```bash
 docker-compose up --build -d backend recommender
 ```
 
-### Update frontend
+### Обновление frontend
 
 ```bash
 cd frontend
@@ -123,24 +126,24 @@ npm run build
 sudo cp -r dist/* /var/www/movierecommender/
 ```
 
-## Troubleshooting
+## Решение проблем
 
-**502 Bad Gateway**: Check if backend/recommender containers are running
+**502 Bad Gateway**: Проверьте, запущены ли контейнеры backend/recommender
 ```bash
 docker-compose ps
 ```
 
-**Connection refused**: Verify ports are not blocked
+**Ошибка подключения**: Проверьте, не заблокированы ли порты
 ```bash
 sudo netstat -tlnp | grep -E ':(3000|8000|5432|5433)'
 ```
 
-**SSL errors**: Verify certificate paths and permissions
+**Ошибки SSL**: Проверьте пути к сертификатам и права доступа
 ```bash
-sudo ls -la /etc/nginx/ssl/
+sudo ls -la /etc/letsencrypt/live/movierecommender.icu/
 ```
 
-**Database connection issues**: Check container logs
+**Ошибки подключения к БД**: Проверьте логи контейнеров
 ```bash
 docker-compose logs movies_db users_db
 ```

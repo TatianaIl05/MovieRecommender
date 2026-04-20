@@ -1,33 +1,33 @@
-# Production Deployment Checklist
+# Чеклист развертывания на Production
 
-## Pre-Deployment
+## Перед развертыванием
 
-### SSL Certificates
-- [ ] Obtain SSL certificates for movierecommender.icu
-- [ ] Place certificates in `/etc/nginx/ssl/` or update nginx config with Let's Encrypt paths
-- [ ] Verify certificate permissions (readable by nginx)
+### SSL сертификаты
+- [ ] Получить SSL сертификаты для movierecommender.icu
+- [ ] Поместить сертификаты в `/etc/letsencrypt/live/movierecommender.icu/` или обновить пути в конфиге nginx
+- [ ] Проверить права доступа к сертификатам (читаемы для nginx)
 
-### Server Setup
-- [ ] Install Docker and Docker Compose
-- [ ] Install nginx on host (not in container)
-- [ ] Ensure ports 80, 443, 3000, 5432, 5433, 8000 are available
-- [ ] Configure firewall to allow 80/443 from internet
+### Подготовка сервера
+- [ ] Установить Docker и Docker Compose
+- [ ] Установить nginx на хосте (не в контейнере)
+- [ ] Убедиться, что порты 80, 443, 3000, 5432, 5433, 8000 доступны
+- [ ] Настроить firewall для разрешения портов 80/443 из интернета
 
-### DNS Configuration
-- [ ] Point movierecommender.icu A record to server IP
-- [ ] Point www.movierecommender.icu A record to server IP
-- [ ] Verify DNS propagation with `nslookup movierecommender.icu`
+### Конфигурация DNS
+- [ ] Указать A запись movierecommender.icu на IP сервера
+- [ ] Указать A запись www.movierecommender.icu на IP сервера
+- [ ] Проверить распространение DNS с помощью `nslookup movierecommender.icu`
 
-## Deployment Steps
+## Этапы развертывания
 
-### 1. nginx Configuration
+### 1. Конфигурация nginx
 ```bash
 sudo cp nginx/movierecommender.icu.conf /etc/nginx/sites-available/
 sudo ln -s /etc/nginx/sites-available/movierecommender.icu.conf /etc/nginx/sites-enabled/
 sudo nginx -t
 ```
 
-### 2. Build Frontend
+### 2. Сборка frontend
 ```bash
 cd frontend
 npm install
@@ -37,30 +37,30 @@ sudo cp -r dist/* /var/www/movierecommender/
 sudo chown -R www-data:www-data /var/www/movierecommender
 ```
 
-### 3. Start Docker Services
+### 3. Запуск Docker сервисов
 ```bash
 cd /path/to/MovieRecommender
 docker-compose up --build -d
 ```
 
-### 4. Start nginx
+### 4. Запуск nginx
 ```bash
 sudo systemctl restart nginx
 sudo systemctl enable nginx
 ```
 
-## Post-Deployment Verification
+## Проверка после развертывания
 
-### Service Health Checks
+### Проверка здоровья сервисов
 - [ ] Backend: `curl http://localhost:3000/health`
 - [ ] Recommender: `curl http://localhost:8000/health`
 - [ ] Frontend: `curl https://movierecommender.icu`
-- [ ] API through nginx: `curl https://movierecommender.icu/api/movies?limit=1`
-- [ ] Recommender through nginx: `curl https://movierecommender.icu/recommender/health`
+- [ ] API через nginx: `curl https://movierecommender.icu/api/movies?limit=1`
+- [ ] Recommender через nginx: `curl https://movierecommender.icu/recommender/health`
 
-### Docker Containers
-- [ ] Verify all containers running: `docker-compose ps`
-- [ ] Check logs for errors:
+### Docker контейнеры
+- [ ] Проверить, что все контейнеры запущены: `docker-compose ps`
+- [ ] Проверить логи на ошибки:
   ```bash
   docker-compose logs backend
   docker-compose logs recommender
@@ -68,60 +68,60 @@ sudo systemctl enable nginx
   docker-compose logs users_db
   ```
 
-### Database Connectivity
-- [ ] Backend connects to movies_db (check backend logs)
-- [ ] Backend connects to users_db (check backend logs)
-- [ ] Database data persisted in `./movies_db/data` and `./users_db/data`
+### Подключение к БД
+- [ ] Backend подключается к movies_db (проверить логи backend)
+- [ ] Backend подключается к users_db (проверить логи backend)
+- [ ] Данные БД сохраняются в `./movies_db/data` и `./users_db/data`
 
 ### nginx
-- [ ] nginx running: `sudo systemctl status nginx`
-- [ ] No errors in logs: `sudo tail -f /var/log/nginx/error.log`
-- [ ] SSL working: visit https://movierecommender.icu in browser
-- [ ] HTTP redirects to HTTPS
+- [ ] nginx запущен: `sudo systemctl status nginx`
+- [ ] Нет ошибок в логах: `sudo tail -f /var/log/nginx/error.log`
+- [ ] SSL работает: открыть https://movierecommender.icu в браузере
+- [ ] HTTP редирект на HTTPS работает
 
 ### Frontend
-- [ ] Static files served correctly
-- [ ] JavaScript/CSS loading without errors (check browser console)
-- [ ] API calls working (check Network tab)
-- [ ] Recommender API calls working
+- [ ] Статические файлы загружаются корректно
+- [ ] JavaScript/CSS загружаются без ошибок (проверить консоль браузера)
+- [ ] API вызовы работают (проверить вкладку Network)
+- [ ] Вызовы Recommender API работают
 
-## Security Checklist
+## Чеклист безопасности
 
-- [ ] Change default database passwords in docker-compose.yml
-- [ ] Update passwords in backend/config/database.js
-- [ ] Restrict database ports (5432, 5433) to localhost only
-- [ ] Restrict backend/recommender ports (3000, 8000) to localhost only
-- [ ] Enable UFW/firewall: allow only 22, 80, 443
-- [ ] Set up SSL auto-renewal with certbot
-- [ ] Review CORS settings in backend and recommender
-- [ ] Add rate limiting in nginx (optional)
+- [ ] Изменить пароли БД по умолчанию в docker-compose.yml
+- [ ] Обновить пароли в backend/config/database.js
+- [ ] Ограничить доступ к портам БД (5432, 5433) только localhost
+- [ ] Ограничить доступ к портам backend/recommender (3000, 8000) только localhost
+- [ ] Включить UFW/firewall: разрешить только 22, 80, 443
+- [ ] Настроить автоматическое обновление SSL сертификатов с certbot
+- [ ] Проверить настройки CORS в backend и recommender
+- [ ] Добавить rate limiting в nginx (опционально)
 
-## Monitoring Setup
+## Настройка мониторинга
 
-- [ ] Set up log rotation for nginx
-- [ ] Set up log rotation for Docker containers
-- [ ] Configure disk space monitoring
-- [ ] Set up uptime monitoring (optional)
-- [ ] Configure backup for database volumes
+- [ ] Настроить ротацию логов nginx
+- [ ] Настроить ротацию логов Docker контейнеров
+- [ ] Настроить мониторинг свободного места на диске
+- [ ] Настроить мониторинг доступности (опционально)
+- [ ] Настроить резервное копирование томов БД
 
-## Maintenance
+## Обслуживание
 
-### Update Application
+### Обновление приложения
 ```bash
-# Pull latest code
+# Получить последний код
 git pull
 
-# Rebuild and restart services
+# Пересобрать и перезапустить сервисы
 docker-compose up --build -d
 
-# Rebuild frontend
+# Пересобрать frontend
 cd frontend && npm run build
 sudo cp -r dist/* /var/www/movierecommender/
 ```
 
-### View Logs
+### Просмотр логов
 ```bash
-# Docker services
+# Docker сервисы
 docker-compose logs -f --tail=100 backend
 docker-compose logs -f --tail=100 recommender
 
@@ -130,41 +130,41 @@ sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```
 
-### Backup Database
+### Резервное копирование БД
 ```bash
-# Backup movies_db
+# Резервная копия movies_db
 docker exec movierecommender-movies_db-1 pg_dump -U admin movies > movies_backup.sql
 
-# Backup users_db
+# Резервная копия users_db
 docker exec movierecommender-users_db-1 pg_dump -U admin users > users_backup.sql
 ```
 
-## Troubleshooting
+## Решение проблем
 
 ### 502 Bad Gateway
-- Check if backend/recommender containers are running
-- Check backend/recommender logs for errors
-- Verify ports 3000 and 8000 are listening: `netstat -tlnp | grep -E ':(3000|8000)'`
+- Проверить, запущены ли контейнеры backend/recommender
+- Проверить логи backend/recommender на ошибки
+- Проверить, слушают ли порты 3000 и 8000: `netstat -tlnp | grep -E ':(3000|8000)'`
 
-### SSL Certificate Errors
-- Verify certificate paths in nginx config
-- Check certificate expiration: `openssl x509 -in /etc/nginx/ssl/movierecommender.icu.crt -noout -dates`
-- Ensure nginx can read certificates: `sudo ls -la /etc/nginx/ssl/`
+### Ошибки SSL сертификата
+- Проверить пути к сертификатам в конфиге nginx
+- Проверить срок действия сертификата: `openssl x509 -in /etc/letsencrypt/live/movierecommender.icu/fullchain.pem -noout -dates`
+- Убедиться, что nginx может читать сертификаты: `sudo ls -la /etc/letsencrypt/live/movierecommender.icu/`
 
-### Database Connection Errors
-- Check if database containers are running: `docker-compose ps`
-- Check database logs: `docker-compose logs movies_db users_db`
-- Verify database credentials match in docker-compose.yml and backend/config/database.js
+### Ошибки подключения к БД
+- Проверить, запущены ли контейнеры БД: `docker-compose ps`
+- Проверить логи БД: `docker-compose logs movies_db users_db`
+- Проверить, совпадают ли учетные данные в docker-compose.yml и backend/config/database.js
 
-### Frontend Not Loading
-- Check if files exist: `ls -la /var/www/movierecommender/`
-- Check nginx error log: `sudo tail -f /var/log/nginx/error.log`
-- Verify nginx config: `sudo nginx -t`
+### Frontend не загружается
+- Проверить, существуют ли файлы: `ls -la /var/www/movierecommender/`
+- Проверить логи nginx: `sudo tail -f /var/log/nginx/error.log`
+- Проверить конфиг nginx: `sudo nginx -t`
 
-## Performance Optimization (Optional)
+## Оптимизация производительности (Опционально)
 
-- [ ] Enable gzip compression in nginx
-- [ ] Set up nginx caching for static assets
-- [ ] Configure PostgreSQL connection pooling
-- [ ] Add Redis for session management
-- [ ] Set up CDN for static assets
+- [ ] Включить gzip сжатие в nginx
+- [ ] Настроить кеширование nginx для статических ассетов
+- [ ] Настроить connection pooling для PostgreSQL
+- [ ] Добавить Redis для управления сессиями
+- [ ] Настроить CDN для статических ассетов
