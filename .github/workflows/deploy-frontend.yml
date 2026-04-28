@@ -24,14 +24,15 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          # Install Node.js 20 if not present
+          if ! command -v node &> /dev/null; then
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
+          
           cd /root/MovieRecommender
           git pull origin main
           cd frontend
-          which node
-          which npm
-          node --version
-          npm --version
-          echo "PATH: $PATH"
           npm install
           npm run build
           sudo cp -r dist/* /var/www/movierecommender/
