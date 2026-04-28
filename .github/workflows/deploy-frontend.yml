@@ -24,8 +24,10 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Install Node.js 20 if not present
-          if ! command -v node &> /dev/null; then
+          # Remove old Node.js and install Node.js 20
+          if ! node --version 2>/dev/null | grep -q "v20"; then
+            sudo apt-get remove -y nodejs libnode-dev libnode72 || true
+            sudo apt-get autoremove -y
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
             sudo apt-get install -y nodejs
           fi
