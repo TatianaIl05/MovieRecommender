@@ -12,16 +12,25 @@
 
 ## Быстрый старт
 
-### Запуск всех сервисов через Docker
+### 1. Запуск Backend и Recommender через Docker
 
 ```bash
 docker-compose up --build
+```
+
+### 2. Запуск Frontend отдельно
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 Приложение доступно по адресу http://localhost:5173
 
 ### Проверка работоспособности
 
+- Frontend: http://localhost:5173
 - Backend: http://localhost:3000/health
 - Recommender: http://localhost:8000/health
 
