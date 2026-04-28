@@ -2,24 +2,24 @@ import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 
-function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) {
+function Selected({ user, selected, setSelected }) {
   const [movies, setMovies] = useState([])
   const [selectedMovie, setSelectedMovie] = useState(null)
 
   useEffect(() => {
     if (user) {
-      loadWatchLater()
+      loadSelected()
     }
   }, [user])
 
-  const loadWatchLater = async () => {
+  const loadSelected = async () => {
     try {
-      const res = await fetch(`/api/watch-later/${user.id}`)
+      const res = await fetch(`/api/selected/${user.id}`)
       const data = await res.json()
 
-      if (data.watch_later_movies && data.watch_later_movies.length > 0) {
+      if (data.selected_movies && data.selected_movies.length > 0) {
         const moviesWithDetails = await Promise.all(
-          data.watch_later_movies.map(async (movieId) => {
+          data.selected_movies.map(async (movieId) => {
             try {
               const detailRes = await fetch(`/api/movies/${movieId}`)
               if (detailRes.ok) {
@@ -35,33 +35,33 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
 
         const validMovies = moviesWithDetails.filter(m => m !== null)
         setMovies(validMovies)
-        setWatchLater(new Set(data.watch_later_movies))
+        setSelected(new Set(data.selected_movies))
       }
     } catch (err) {
-      console.error('Error loading watch later list:', err)
+      console.error('Error loading selected list:', err)
     }
   }
 
   const handleRemove = async (movieId) => {
     try {
-      const res = await fetch(`/api/watch-later/${user.id}/${movieId}`, {
+      const res = await fetch(`/api/selected/${user.id}/${movieId}`, {
         method: 'DELETE',
       })
 
       if (res.ok) {
         setMovies(movies.filter(m => m.id !== movieId))
-        const newWatchLater = new Set(watchLater)
-        newWatchLater.delete(movieId)
-        setWatchLater(newWatchLater)
+        const newSelected = new Set(selected)
+        newSelected.delete(movieId)
+        setSelected(newSelected)
       }
     } catch (err) {
-      console.error('Error removing from watch later list:', err)
+      console.error('Error removing from selected list:', err)
     }
   }
 
   return (
     <div className="container">
-      <h1 className="page__title">Watch Later</h1>
+      <h1 className="page__title">Selected</h1>
       {movies.length > 0 ? (
         <div className="movies-grid">
           {movies.map((movie) => (
@@ -75,7 +75,7 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
           ))}
         </div>
       ) : (
-        <p className="empty-state">You have no movies in your Watch Later list</p>
+        <p className="empty-state">You have no movies in your Selected list</p>
       )}
       {selectedMovie && (
         <MovieModal
@@ -84,8 +84,8 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
           user={user}
           favorites={new Set()}
           setFavorites={() => {}}
-          watchLater={watchLater}
-          setWatchLater={setWatchLater}
+          watchLater={new Set()}
+          setWatchLater={() => {}}
           selected={selected}
           setSelected={setSelected}
         />
@@ -94,4 +94,4 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
   )
 }
 
-export default WatchLater
+export default Selected

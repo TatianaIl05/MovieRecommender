@@ -1,6 +1,6 @@
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w1280'
 
-function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater, setWatchLater }) {
+function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
   if (!movie) return null
 
   const getPosterUrl = (path) => {
@@ -57,8 +57,27 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
     }
   }
 
+  const handleAddToSelected = async () => {
+    if (!user || !movie.id) return
+
+    try {
+      const res = await fetch(`/api/selected/${user.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movies: [{ movie_id: movie.id }] }),
+      })
+
+      if (res.ok) {
+        setSelected(new Set([...selected, movie.id]))
+      }
+    } catch (err) {
+      console.error('Error adding to selected:', err)
+    }
+  }
+
   const isFavorite = favorites.has(movie.id)
   const isWatchLater = watchLater.has(movie.id)
+  const isSelected = selected?.has(movie.id)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -115,6 +134,13 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
                   disabled={isWatchLater}
                 >
                   {isWatchLater ? 'In List' : 'Watch Later'}
+                </button>
+                <button
+                  className="btn btn--secondary"
+                  onClick={handleAddToSelected}
+                  disabled={isSelected}
+                >
+                  {isSelected ? 'Selected' : 'Add to Selected'}
                 </button>
               </div>
             )}

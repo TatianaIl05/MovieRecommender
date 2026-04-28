@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 
-function Home({ user, favorites, setFavorites, watchLater, setWatchLater }) {
+function Home({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
   const [movies, setMovies] = useState([])
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
@@ -110,6 +110,8 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater }) {
           setFavorites={setFavorites}
           watchLater={watchLater}
           setWatchLater={setWatchLater}
+          selected={selected}
+          setSelected={setSelected}
         />
       )}
     </div>

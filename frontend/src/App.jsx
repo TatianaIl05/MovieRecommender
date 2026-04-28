@@ -6,23 +6,26 @@ import Auth from './pages/Auth'
 import Profile from './pages/Profile'
 import Recommend from './pages/Recommend'
 import WatchLater from './pages/WatchLater'
+import Selected from './pages/Selected'
 
 function App() {
   const [user, setUser] = useState(null)
   const [favorites, setFavorites] = useState(new Set())
   const [watchLater, setWatchLater] = useState(new Set())
+  const [selected, setSelected] = useState(new Set())
 
   return (
     <Router>
       <div className="app">
-        <Header user={user} setUser={setUser} setFavorites={setFavorites} setWatchLater={setWatchLater} />
+        <Header user={user} setUser={setUser} setFavorites={setFavorites} setWatchLater={setWatchLater} setSelected={setSelected} />
         <main className="main">
           <Routes>
-            <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} />} />
+            <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} />} />
             <Route path="/auth" element={<Auth setUser={setUser} />} />
-            <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} /> : <Navigate to="/auth" />} />
-            <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} /> : <Navigate to="/auth" />} />
-            <Route path="/watch-later" element={user ? <WatchLater user={user} watchLater={watchLater} setWatchLater={setWatchLater} /> : <Navigate to="/auth" />} />
+            <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} selected={selected} setSelected={setSelected} /> : <Navigate to="/auth" />} />
+            <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} /> : <Navigate to="/auth" />} />
+            <Route path="/watch-later" element={user ? <WatchLater user={user} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} /> : <Navigate to="/auth" />} />
+            <Route path="/selected" element={user ? <Selected user={user} selected={selected} setSelected={setSelected} /> : <Navigate to="/auth" />} />
           </Routes>
         </main>
       </div>

@@ -4,7 +4,7 @@ import MovieModal from '../components/MovieModal'
 
 const RECOMMENDER_URL = '/recommender'
 
-function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater }) {
+function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
   const [movies, setMovies] = useState([])
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
@@ -191,6 +191,8 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater })
           setFavorites={setFavorites}
           watchLater={watchLater}
           setWatchLater={setWatchLater}
+          selected={selected}
+          setSelected={setSelected}
         />
       )}
     </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 
-function Profile({ user, favorites, setFavorites }) {
+function Profile({ user, favorites, setFavorites, selected, setSelected }) {
   const [movies, setMovies] = useState([])
   const [selectedMovie, setSelectedMovie] = useState(null)
 
@@ -93,6 +93,8 @@ function Profile({ user, favorites, setFavorites }) {
           setFavorites={setFavorites}
           watchLater={new Set()}
           setWatchLater={() => {}}
+          selected={selected}
+          setSelected={setSelected}
         />
       )}
     </div>

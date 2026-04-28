@@ -1,12 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
 
-function Header({ user, setUser, setFavorites, setWatchLater }) {
+function Header({ user, setUser, setFavorites, setWatchLater, setSelected }) {
   const location = useLocation()
 
   const handleLogout = () => {
     setUser(null)
     setFavorites(new Set())
     setWatchLater(new Set())
+    setSelected(new Set())
   }
 
   return (
@@ -17,6 +18,7 @@ function Header({ user, setUser, setFavorites, setWatchLater }) {
           <Link to="/" className={`nav__link ${location.pathname === '/' ? 'active' : ''}`}>Movies</Link>
           <Link to="/recommend" className={`nav__link ${location.pathname === '/recommend' ? 'active' : ''}`}>Recommendations</Link>
           <Link to="/watch-later" className={`nav__link ${location.pathname === '/watch-later' ? 'active' : ''}`}>Watch Later</Link>
+          <Link to="/selected" className={`nav__link ${location.pathname === '/selected' ? 'active' : ''}`}>Selected</Link>
           {user ? (
             <>
               <Link to="/profile" className={`nav__link ${location.pathname === '/profile' ? 'active' : ''}`}>{user.login}</Link>
