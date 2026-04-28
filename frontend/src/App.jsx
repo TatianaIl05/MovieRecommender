@@ -21,7 +21,7 @@ function App() {
             <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} />} />
             <Route path="/auth" element={<Auth setUser={setUser} />} />
             <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} /> : <Navigate to="/auth" />} />
-            <Route path="/recommend" element={<Recommend user={user} setUser={setUser} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} />} />
+            <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} /> : <Navigate to="/auth" />} />
             <Route path="/watch-later" element={user ? <WatchLater user={user} watchLater={watchLater} setWatchLater={setWatchLater} /> : <Navigate to="/auth" />} />
           </Routes>
         </main>
