@@ -17,9 +17,9 @@ function WatchLater({ user, watchLater, setWatchLater }) {
       const res = await fetch(`/api/watch-later/${user.id}`)
       const data = await res.json()
 
-      if (data.favorite_movies && data.favorite_movies.length > 0) {
+      if (data.watch_later_movies && data.watch_later_movies.length > 0) {
         const moviesWithDetails = await Promise.all(
-          data.favorite_movies.map(async (movieId) => {
+          data.watch_later_movies.map(async (movieId) => {
             try {
               const detailRes = await fetch(`/api/movies/${movieId}`)
               if (detailRes.ok) {
@@ -35,7 +35,7 @@ function WatchLater({ user, watchLater, setWatchLater }) {
 
         const validMovies = moviesWithDetails.filter(m => m !== null)
         setMovies(validMovies)
-        setWatchLater(new Set(data.favorite_movies))
+        setWatchLater(new Set(data.watch_later_movies))
       }
     } catch (err) {
       console.error('Error loading watch later list:', err)
