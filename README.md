@@ -36,13 +36,34 @@ npm run dev
 
 ## Архитектура
 
-| Сервис | Порт | Описание |
-|--------|------|----------|
-| Frontend | 5173 | React SPA с Vite dev server |
-| Backend | 3000 | REST API на Express |
-| Recommender | 8000 | ML-сервис рекомендаций на FastAPI |
-| movies_db | 5432 | PostgreSQL с данными фильмов |
-| users_db | 5433 | PostgreSQL с данными пользователей |
+### Почему фронтенд не в Docker?
+
+**Production архитектура:**
+- Frontend собирается в статические файлы (`npm run build`) и раздается через **nginx на хосте**
+- Backend и Recommender работают в **Docker контейнерах**
+- nginx на хосте управляет SSL сертификатами и проксирует запросы к API
+
+**Преимущества такого подхода:**
+- ✅ Максимальная производительность раздачи статики через nginx
+- ✅ Централизованное управление SSL (Let's Encrypt автообновление)
+- ✅ Единая точка входа для всех запросов
+- ✅ Стандартная production практика для SPA приложений
+- ✅ Меньше контейнеров = проще мониторинг
+
+**Development режим:**
+- Frontend запускается локально через `npm run dev` (Vite dev server)
+- Vite автоматически проксирует API запросы к Docker контейнерам
+
+### Схема сервисов
+
+| Сервис | Порт | Где работает | Описание |
+|--------|------|--------------|----------|
+| Frontend (dev) | 5173 | Локально | Vite dev server для разработки |
+| Frontend (prod) | 80/443 | nginx на хосте | Статические файлы через nginx |
+| Backend | 3000 | Docker | REST API на Express |
+| Recommender | 8000 | Docker | ML-сервис рекомендаций на FastAPI |
+| movies_db | 5432 | Docker | PostgreSQL с данными фильмов |
+| users_db | 5433 | Docker | PostgreSQL с данными пользователей |
 
 ## Разработка
 
