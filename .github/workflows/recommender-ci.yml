@@ -11,6 +11,7 @@ on:
     paths:
       - 'recommender/**'
       - '.github/workflows/recommender-ci.yml'
+  workflow_call:
 
 jobs:
   test:
