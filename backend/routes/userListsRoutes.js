@@ -10,4 +10,8 @@ router.get('/watch-later/:user_id', userListsController.getWatchLater);
 router.post('/watch-later/:user_id', userListsController.addWatchLater);
 router.delete('/watch-later/:user_id/:movie_id', userListsController.removeWatchLater);
 
+router.get('/selected/:user_id', userListsController.getSelected);
+router.post('/selected/:user_id', userListsController.addSelected);
+router.delete('/selected/:user_id/:movie_id', userListsController.removeSelected);
+
 module.exports = router;

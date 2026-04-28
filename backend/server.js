@@ -5,7 +5,6 @@ const { connectToMovies, connectToUsers } = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const moviesRoutes = require('./routes/moviesRoutes');
 const userListsRoutes = require('./routes/userListsRoutes');
-const selectedRoutes = require('./routes/selectedRoutes');
 
 const app = express();
 
@@ -16,7 +15,6 @@ app.use(express.static('public'));
 app.use('/api', authRoutes);
 app.use('/api', moviesRoutes);
 app.use('/api', userListsRoutes);
-app.use('/api', selectedRoutes);
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
