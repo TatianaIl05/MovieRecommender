@@ -8,6 +8,7 @@ function Header({ user, setUser, setFavorites, setWatchLater, setSelected }) {
     setFavorites(new Set())
     setWatchLater(new Set())
     setSelected(new Set())
+    localStorage.removeItem('user')
   }
 
   return (

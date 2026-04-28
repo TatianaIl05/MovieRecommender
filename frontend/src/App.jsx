@@ -14,6 +14,18 @@ function App() {
   const [watchLater, setWatchLater] = useState(new Set())
   const [selected, setSelected] = useState(new Set())
 
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch (err) {
+        console.error('Error parsing saved user:', err)
+        localStorage.removeItem('user')
+      }
+    }
+  }, [])
+
   return (
     <Router>
       <div className="app">

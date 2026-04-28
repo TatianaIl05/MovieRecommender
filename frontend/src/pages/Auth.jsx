@@ -28,6 +28,7 @@ function Auth({ setUser }) {
 
       if (res.ok) {
         setUser(data.user)
+        localStorage.setItem('user', JSON.stringify(data.user))
         navigate('/')
       } else {
         showMessage(setLoginMessage, data.error || 'Login failed', 'error')
