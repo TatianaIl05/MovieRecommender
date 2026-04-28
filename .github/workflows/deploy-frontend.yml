@@ -27,6 +27,11 @@ jobs:
           cd /root/MovieRecommender
           git pull origin main
           cd frontend
+          which node
+          which npm
+          node --version
+          npm --version
+          echo "PATH: $PATH"
           npm install
           npm run build
           sudo cp -r dist/* /var/www/movierecommender/
