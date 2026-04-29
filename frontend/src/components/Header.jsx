@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 function Header({ user, setUser, setFavorites, setWatchLater, setSelected }) {
   const location = useLocation()
+  const userInitial = user?.login?.charAt(0)?.toUpperCase() || '?'
 
   const handleLogout = () => {
     setUser(null)
@@ -22,7 +23,10 @@ function Header({ user, setUser, setFavorites, setWatchLater, setSelected }) {
           <Link to="/selected" className={`nav__link ${location.pathname === '/selected' ? 'active' : ''}`}>Selected</Link>
           {user ? (
             <>
-              <Link to="/profile" className={`nav__link ${location.pathname === '/profile' ? 'active' : ''}`}>{user.login}</Link>
+              <Link to="/profile" className={`nav__link nav__user ${location.pathname === '/profile' ? 'active' : ''}`}>
+                <span className="nav__avatar" aria-hidden="true">{userInitial}</span>
+                <span>{user.login}</span>
+              </Link>
               {location.pathname === '/profile' && (
                 <button className="btn btn--logout" onClick={handleLogout}>Logout</button>
               )}
