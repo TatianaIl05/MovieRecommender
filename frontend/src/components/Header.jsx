@@ -25,7 +25,6 @@ function Header({ user, setUser, setFavorites, setWatchLater, setSelected }) {
             <>
               <Link to="/profile" className={`nav__link nav__user ${location.pathname === '/profile' ? 'active' : ''}`}>
                 <span className="nav__avatar" aria-hidden="true">{userInitial}</span>
-                <span>{user.login}</span>
               </Link>
               {location.pathname === '/profile' && (
                 <button className="btn btn--logout" onClick={handleLogout}>Logout</button>
