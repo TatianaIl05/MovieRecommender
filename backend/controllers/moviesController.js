@@ -9,7 +9,7 @@ async function getMovies(req, res) {
         let query, params;
 
         if (search) {
-            query = 'SELECT id, title, release_date FROM movies WHERE title ILIKE $1 ORDER BY id LIMIT $2 OFFSET $3';
+            query = 'SELECT id, title, release_date FROM movies WHERE title ILIKE $1 ORDER BY popularity_norm LIMIT $2 OFFSET $3';
             params = [`%${search}%`, limit, offset];
         } else {
             query = 'SELECT id, title, release_date FROM movies ORDER BY popularity_norm DESC LIMIT $1 OFFSET $2';
