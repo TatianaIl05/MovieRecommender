@@ -21,6 +21,7 @@ async function connectToMovies() {
     while (retries > 0) {
         try {
             await movies_pool.query('SELECT 1');
+            await ensureMovieSearchSupport();
             console.log('Connected to movies database');
             return;
         } catch (err) {
@@ -31,6 +32,12 @@ async function connectToMovies() {
     }
     console.error('Failed to connect to movies database');
     process.exit(1);
+}
+
+async function ensureMovieSearchSupport() {
+    await movies_pool.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_title_trgm_idx ON movies USING GIN (lower(title) gin_trgm_ops)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_original_title_trgm_idx ON movies USING GIN (lower(original_title) gin_trgm_ops)');
 }
 
 async function connectToUsers() {
