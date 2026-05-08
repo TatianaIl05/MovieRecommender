@@ -87,6 +87,48 @@ async function getMovieById(req, res) {
     }
 }
 
+async function getMovieSuggestions(req, res) {
+    try {
+        const search = (req.query.q || '').trim();
+        const limit = Math.min(parseInt(req.query.limit) || 8, 12);
+
+        if (search.length < 2) {
+            return res.json({ suggestions: [] });
+        }
+
+        const result = await movies_pool.query(
+            `
+                SELECT id, title, original_title, release_date
+                FROM movies
+                WHERE
+                    lower(title) LIKE '%' || lower($1) || '%'
+                    OR lower(original_title) LIKE '%' || lower($1) || '%'
+                    OR lower(title) % lower($1)
+                    OR lower(original_title) % lower($1)
+                ORDER BY
+                    CASE
+                        WHEN lower(title) = lower($1) OR lower(original_title) = lower($1) THEN 0
+                        WHEN lower(title) LIKE lower($1) || '%' OR lower(original_title) LIKE lower($1) || '%' THEN 1
+                        WHEN lower(title) LIKE '%' || lower($1) || '%' OR lower(original_title) LIKE '%' || lower($1) || '%' THEN 2
+                        ELSE 3
+                    END,
+                    GREATEST(
+                        COALESCE(similarity(lower(title), lower($1)), 0),
+                        COALESCE(similarity(lower(original_title), lower($1)), 0)
+                    ) DESC,
+                    popularity_norm DESC
+                LIMIT $2
+            `,
+            [search, limit]
+        );
+
+        res.json({ suggestions: result.rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 async function getPopularMovies(req, res) {
     try {
         const limit = parseInt(req.query.limit) || 20;
@@ -131,6 +173,7 @@ async function getMoviesByIds(req, res) {
 module.exports = {
     getMovies,
     getMovieById,
+    getMovieSuggestions,
     getPopularMovies,
     getMoviesByIds
 };

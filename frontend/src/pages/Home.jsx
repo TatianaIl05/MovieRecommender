@@ -9,6 +9,8 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const limit = 40
 
   useEffect(() => {
@@ -16,15 +18,38 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   }, [])
 
   useEffect(() => {
-    if (!search) {
-      loadMovies()
-    }
-  }, [search])
+    const query = searchInput.trim()
 
-  const loadMovies = async (reset = false) => {
+    if (query.length < 2) {
+      setSuggestions([])
+      return
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/movies/suggest?q=${encodeURIComponent(query)}&limit=8`, {
+          signal: controller.signal
+        })
+        const data = await res.json()
+        setSuggestions(data.suggestions || [])
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error loading suggestions:', err)
+        }
+      }
+    }, 250)
+
+    return () => {
+      controller.abort()
+      clearTimeout(timeoutId)
+    }
+  }, [searchInput])
+
+  const loadMovies = async (reset = false, searchTerm = search) => {
     try {
       const currentOffset = reset ? 0 : offset
-      const res = await fetch(`/api/movies?limit=${limit}&offset=${currentOffset}${search ? `&search=${encodeURIComponent(search)}` : ''}`)
+      const res = await fetch(`/api/movies?limit=${limit}&offset=${currentOffset}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`)
       const data = await res.json()
 
       if (data.movies && data.movies.length > 0) {
@@ -62,10 +87,25 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
 
   const handleSearch = (e) => {
     e.preventDefault()
-    setSearch(searchInput)
+    const query = searchInput.trim()
+
+    setSearch(query)
     setOffset(0)
     setHasMore(true)
-    loadMovies(true)
+    setShowSuggestions(false)
+    loadMovies(true, query)
+  }
+
+  const handleSuggestionSelect = (suggestion) => {
+    const query = suggestion.title
+
+    setSearchInput(query)
+    setSearch(query)
+    setSuggestions([])
+    setShowSuggestions(false)
+    setOffset(0)
+    setHasMore(true)
+    loadMovies(true, query)
   }
 
   const handleMovieClick = (movie) => {
@@ -76,13 +116,41 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     <div className="container">
       <h1 className="page__title">Movies</h1>
       <form className="search-form" onSubmit={handleSearch}>
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Search movies..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
+        <div className="search-field">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search movies..."
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value)
+              setShowSuggestions(true)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+            autoComplete="off"
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="search-suggestions">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  className="search-suggestion"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSuggestionSelect(suggestion)}
+                >
+                  <span className="search-suggestion__title">{suggestion.title}</span>
+                  {suggestion.release_date && (
+                    <span className="search-suggestion__year">
+                      {new Date(suggestion.release_date).getFullYear()}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button type="submit" className="btn btn--primary">Search</button>
       </form>
       <div className="movies-grid">

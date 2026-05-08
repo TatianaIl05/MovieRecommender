@@ -212,8 +212,13 @@ a:hover {
     margin-bottom: 30px;
 }
 
-.search-input {
+.search-field {
+    position: relative;
     flex: 1;
+}
+
+.search-input {
+    width: 100%;
     padding: 12px 16px;
     font-size: 1rem;
     border: 1px solid var(--color-border);
@@ -225,6 +230,55 @@ a:hover {
     outline: none;
     border-color: var(--color-accent);
     box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    overflow: hidden;
+}
+
+.search-suggestion {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition);
+}
+
+.search-suggestion:last-child {
+    border-bottom: none;
+}
+
+.search-suggestion:hover,
+.search-suggestion:focus {
+    outline: none;
+    background: var(--color-bg-secondary);
+}
+
+.search-suggestion__title {
+    font-weight: 600;
+}
+
+.search-suggestion__year {
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
 }
 
 /* ===== Movies Grid ===== */
@@ -685,6 +739,10 @@ a:hover {
 
     .page__title {
         font-size: 1.5rem;
+    }
+
+    .search-form {
+        flex-direction: column;
     }
 
     .modal__content {
