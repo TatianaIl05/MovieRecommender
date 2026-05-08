@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TABLE IF NOT EXISTS movies (
     id INTEGER,
     imdb_id TEXT,
@@ -17,3 +19,6 @@ CREATE TABLE IF NOT EXISTS movies (
 );
 
 \COPY movies FROM '/csv_data/movies.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+CREATE INDEX IF NOT EXISTS movies_title_trgm_idx ON movies USING GIN (lower(title) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS movies_original_title_trgm_idx ON movies USING GIN (lower(original_title) gin_trgm_ops);

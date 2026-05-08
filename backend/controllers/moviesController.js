@@ -4,13 +4,34 @@ async function getMovies(req, res) {
     try {
         const limit = parseInt(req.query.limit) || 20;
         const offset = parseInt(req.query.offset) || 0;
-        const search = req.query.search || '';
+        const search = (req.query.search || '').trim();
 
         let query, params;
 
         if (search) {
-            query = 'SELECT id, title, release_date FROM movies WHERE title ILIKE $1 ORDER BY popularity_norm DESC LIMIT $2 OFFSET $3';
-            params = [`%${search}%`, limit, offset];
+            query = `
+                SELECT id, title, release_date
+                FROM movies
+                WHERE
+                    lower(title) LIKE '%' || lower($1) || '%'
+                    OR lower(original_title) LIKE '%' || lower($1) || '%'
+                    OR lower(title) % lower($1)
+                    OR lower(original_title) % lower($1)
+                ORDER BY
+                    CASE
+                        WHEN lower(title) = lower($1) OR lower(original_title) = lower($1) THEN 0
+                        WHEN lower(title) LIKE lower($1) || '%' OR lower(original_title) LIKE lower($1) || '%' THEN 1
+                        WHEN lower(title) LIKE '%' || lower($1) || '%' OR lower(original_title) LIKE '%' || lower($1) || '%' THEN 2
+                        ELSE 3
+                    END,
+                    GREATEST(
+                        COALESCE(similarity(lower(title), lower($1)), 0),
+                        COALESCE(similarity(lower(original_title), lower($1)), 0)
+                    ) DESC,
+                    popularity_norm DESC
+                LIMIT $2 OFFSET $3
+            `;
+            params = [search, limit, offset];
         } else {
             query = 'SELECT id, title, release_date FROM movies ORDER BY popularity_norm DESC LIMIT $1 OFFSET $2';
             params = [limit, offset];
@@ -20,7 +41,18 @@ async function getMovies(req, res) {
 
         let total;
         if (search) {
-            total = await movies_pool.query('SELECT COUNT(*) FROM movies WHERE title ILIKE $1', [`%${search}%`]);
+            total = await movies_pool.query(
+                `
+                    SELECT COUNT(*)
+                    FROM movies
+                    WHERE
+                        lower(title) LIKE '%' || lower($1) || '%'
+                        OR lower(original_title) LIKE '%' || lower($1) || '%'
+                        OR lower(title) % lower($1)
+                        OR lower(original_title) % lower($1)
+                `,
+                [search]
+            );
         } else {
             total = await movies_pool.query('SELECT COUNT(*) FROM movies');
         }
