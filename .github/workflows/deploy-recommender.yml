@@ -27,5 +27,5 @@ jobs:
         script: |
           cd /root/MovieRecommender
           git pull origin main
-          docker-compose up -d --build recommender
-          docker-compose logs --tail=50 recommender
+          docker compose up -d --build recommender
+          docker compose logs --tail=50 recommender
