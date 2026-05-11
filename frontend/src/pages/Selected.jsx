@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
+import { getMoviesByIds } from '../utils/movieCache'
 
-function Selected({ user, selected, setSelected }) {
+function Selected({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, movieCache, setMovieCache }) {
   const [movies, setMovies] = useState([])
   const [selectedMovie, setSelectedMovie] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (user) {
@@ -12,33 +14,24 @@ function Selected({ user, selected, setSelected }) {
     }
   }, [user])
 
+  useEffect(() => {
+    setMovies((currentMovies) => currentMovies.filter((movie) => selected.has(movie.id)))
+  }, [selected])
+
   const loadSelected = async () => {
+    setLoading(true)
+
     try {
       const res = await fetch(`/api/selected/${user.id}`)
       const data = await res.json()
+      const movieIds = data.selected_movies || []
 
-      if (data.selected_movies && data.selected_movies.length > 0) {
-        const moviesWithDetails = await Promise.all(
-          data.selected_movies.map(async (movieId) => {
-            try {
-              const detailRes = await fetch(`/api/movies/${movieId}`)
-              if (detailRes.ok) {
-                const detail = await detailRes.json()
-                return detail
-              }
-              return null
-            } catch (err) {
-              return null
-            }
-          })
-        )
-
-        const validMovies = moviesWithDetails.filter(m => m !== null)
-        setMovies(validMovies)
-        setSelected(new Set(data.selected_movies))
-      }
+      setSelected(new Set(movieIds))
+      setMovies(await getMoviesByIds(movieIds, movieCache, setMovieCache))
     } catch (err) {
       console.error('Error loading selected list:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -62,7 +55,9 @@ function Selected({ user, selected, setSelected }) {
   return (
     <div className="container">
       <h1 className="page__title">Selected</h1>
-      {movies.length > 0 ? (
+      {loading ? (
+        <p className="empty-state">Loading selected list...</p>
+      ) : movies.length > 0 ? (
         <div className="movies-grid">
           {movies.map((movie) => (
             <MovieCard
@@ -82,10 +77,10 @@ function Selected({ user, selected, setSelected }) {
           movie={selectedMovie}
           onClose={() => setSelectedMovie(null)}
           user={user}
-          favorites={new Set()}
-          setFavorites={() => {}}
-          watchLater={new Set()}
-          setWatchLater={() => {}}
+          favorites={favorites}
+          setFavorites={setFavorites}
+          watchLater={watchLater}
+          setWatchLater={setWatchLater}
           selected={selected}
           setSelected={setSelected}
         />

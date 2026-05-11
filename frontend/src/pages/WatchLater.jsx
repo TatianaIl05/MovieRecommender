@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
+import { getMoviesByIds } from '../utils/movieCache'
 
-function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) {
+function WatchLater({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, movieCache, setMovieCache }) {
   const [movies, setMovies] = useState([])
   const [selectedMovie, setSelectedMovie] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (user) {
@@ -12,33 +14,24 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
     }
   }, [user])
 
+  useEffect(() => {
+    setMovies((currentMovies) => currentMovies.filter((movie) => watchLater.has(movie.id)))
+  }, [watchLater])
+
   const loadWatchLater = async () => {
+    setLoading(true)
+
     try {
       const res = await fetch(`/api/watch-later/${user.id}`)
       const data = await res.json()
+      const movieIds = data.watch_later_movies || []
 
-      if (data.watch_later_movies && data.watch_later_movies.length > 0) {
-        const moviesWithDetails = await Promise.all(
-          data.watch_later_movies.map(async (movieId) => {
-            try {
-              const detailRes = await fetch(`/api/movies/${movieId}`)
-              if (detailRes.ok) {
-                const detail = await detailRes.json()
-                return detail
-              }
-              return null
-            } catch (err) {
-              return null
-            }
-          })
-        )
-
-        const validMovies = moviesWithDetails.filter(m => m !== null)
-        setMovies(validMovies)
-        setWatchLater(new Set(data.watch_later_movies))
-      }
+      setWatchLater(new Set(movieIds))
+      setMovies(await getMoviesByIds(movieIds, movieCache, setMovieCache))
     } catch (err) {
       console.error('Error loading watch later list:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -62,7 +55,9 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
   return (
     <div className="container">
       <h1 className="page__title">Watch Later</h1>
-      {movies.length > 0 ? (
+      {loading ? (
+        <p className="empty-state">Loading watch later list...</p>
+      ) : movies.length > 0 ? (
         <div className="movies-grid">
           {movies.map((movie) => (
             <MovieCard
@@ -82,8 +77,8 @@ function WatchLater({ user, watchLater, setWatchLater, selected, setSelected }) 
           movie={selectedMovie}
           onClose={() => setSelectedMovie(null)}
           user={user}
-          favorites={new Set()}
-          setFavorites={() => {}}
+          favorites={favorites}
+          setFavorites={setFavorites}
           watchLater={watchLater}
           setWatchLater={setWatchLater}
           selected={selected}

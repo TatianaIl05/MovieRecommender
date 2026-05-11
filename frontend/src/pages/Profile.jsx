@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
+import { getMoviesByIds } from '../utils/movieCache'
 
-function Profile({ user, favorites, setFavorites, selected, setSelected }) {
+function Profile({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, movieCache, setMovieCache }) {
   const [movies, setMovies] = useState([])
   const [selectedMovie, setSelectedMovie] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (user) {
@@ -12,33 +14,24 @@ function Profile({ user, favorites, setFavorites, selected, setSelected }) {
     }
   }, [user])
 
+  useEffect(() => {
+    setMovies((currentMovies) => currentMovies.filter((movie) => favorites.has(movie.id)))
+  }, [favorites])
+
   const loadFavorites = async () => {
+    setLoading(true)
+
     try {
       const res = await fetch(`/api/favorites/${user.id}`)
       const data = await res.json()
+      const movieIds = data.favorite_movies || []
 
-      if (data.favorite_movies && data.favorite_movies.length > 0) {
-        const moviesWithDetails = await Promise.all(
-          data.favorite_movies.map(async (movieId) => {
-            try {
-              const detailRes = await fetch(`/api/movies/${movieId}`)
-              if (detailRes.ok) {
-                const detail = await detailRes.json()
-                return detail
-              }
-              return null
-            } catch (err) {
-              return null
-            }
-          })
-        )
-
-        const validMovies = moviesWithDetails.filter(m => m !== null)
-        setMovies(validMovies)
-        setFavorites(new Set(data.favorite_movies))
-      }
+      setFavorites(new Set(movieIds))
+      setMovies(await getMoviesByIds(movieIds, movieCache, setMovieCache))
     } catch (err) {
       console.error('Error loading favorites:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -69,7 +62,9 @@ function Profile({ user, favorites, setFavorites, selected, setSelected }) {
         </div>
       </div>
       <h2 className="section-title">Favorites</h2>
-      {movies.length > 0 ? (
+      {loading ? (
+        <p className="empty-state">Loading favorites...</p>
+      ) : movies.length > 0 ? (
         <div className="movies-grid">
           {movies.map((movie) => (
             <MovieCard
@@ -91,8 +86,8 @@ function Profile({ user, favorites, setFavorites, selected, setSelected }) {
           user={user}
           favorites={favorites}
           setFavorites={setFavorites}
-          watchLater={new Set()}
-          setWatchLater={() => {}}
+          watchLater={watchLater}
+          setWatchLater={setWatchLater}
           selected={selected}
           setSelected={setSelected}
         />
