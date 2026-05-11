@@ -36,8 +36,49 @@ async function connectToMovies() {
 
 async function ensureMovieSearchSupport() {
     await movies_pool.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+    await ensureMovieArrayColumn('genres');
+    await ensureMovieArrayColumn('production_countries');
+    await ensureMovieArrayColumn('spoken_languages');
     await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_title_trgm_idx ON movies USING GIN (lower(title) gin_trgm_ops)');
     await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_original_title_trgm_idx ON movies USING GIN (lower(original_title) gin_trgm_ops)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_genres_gin_idx ON movies USING GIN (genres)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_production_countries_gin_idx ON movies USING GIN (production_countries)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_spoken_languages_gin_idx ON movies USING GIN (spoken_languages)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_collection_idx ON movies (belongs_to_collection)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_release_date_idx ON movies (release_date)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_vote_average_idx ON movies (vote_average)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_runtime_idx ON movies (runtime)');
+}
+
+async function ensureMovieArrayColumn(columnName) {
+    const allowedColumns = new Set(['genres', 'production_countries', 'spoken_languages']);
+    if (!allowedColumns.has(columnName)) {
+        throw new Error(`Unsupported movie array column: ${columnName}`);
+    }
+
+    const result = await movies_pool.query(
+        `
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'movies'
+              AND column_name = $1
+        `,
+        [columnName]
+    );
+
+    if (result.rows[0]?.data_type === 'ARRAY') {
+        return;
+    }
+
+    await movies_pool.query(`
+        ALTER TABLE movies
+        ALTER COLUMN ${columnName} TYPE text[]
+        USING CASE
+            WHEN ${columnName} IS NULL OR ${columnName} = '' THEN NULL
+            ELSE string_to_array(${columnName}, ', ')
+        END
+    `);
 }
 
 async function connectToUsers() {

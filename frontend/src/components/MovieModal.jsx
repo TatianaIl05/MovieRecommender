@@ -21,6 +21,11 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
     return h > 0 ? `${h}h ${m}m` : `${m}m`
   }
 
+  const formatList = (value) => {
+    if (!value) return null
+    return Array.isArray(value) ? value.join(', ') : value
+  }
+
   const handleAddToFavorites = async () => {
     if (!user || !movie.id) return
 
@@ -104,7 +109,7 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
               )}
             </div>
 
-            {movie.genres && <p className="modal__genres">{movie.genres}</p>}
+            {formatList(movie.genres) && <p className="modal__genres">{formatList(movie.genres)}</p>}
 
             {movie.overview && (
               <div className="modal__description">

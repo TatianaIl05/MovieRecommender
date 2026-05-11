@@ -281,6 +281,127 @@ a:hover {
     font-size: 0.85rem;
 }
 
+/* ===== Filters ===== */
+.movies-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.movies-results {
+    min-width: 0;
+}
+
+.filters-toggle {
+    display: none;
+}
+
+.filters-panel {
+    position: sticky;
+    top: 88px;
+    padding: 18px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.filters-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.filters-panel__header h2 {
+    font-size: 1.1rem;
+    color: var(--color-primary);
+}
+
+.filters-panel__clear {
+    border: none;
+    background: transparent;
+    color: var(--color-accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filters-panel__clear:hover {
+    color: var(--color-primary);
+}
+
+.filters-panel__loading,
+.movies-empty {
+    color: var(--color-text-secondary);
+}
+
+.filter-group {
+    padding: 16px 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.filter-group__title {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 0.92rem;
+}
+
+.filter-option input {
+    accent-color: var(--color-primary);
+}
+
+.filter-option__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-option__count {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+}
+
+.range-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.range-filter input {
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.range-filter input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
 /* ===== Movies Grid ===== */
 .movies-grid {
     display: grid;
@@ -743,6 +864,24 @@ a:hover {
 
     .search-form {
         flex-direction: column;
+    }
+
+    .movies-layout {
+        display: block;
+    }
+
+    .filters-toggle {
+        display: inline-flex;
+    }
+
+    .filters-panel {
+        display: none;
+        position: static;
+        margin-bottom: 24px;
+    }
+
+    .filters-panel--open {
+        display: block;
     }
 
     .modal__content {

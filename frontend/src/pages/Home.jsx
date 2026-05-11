@@ -1,21 +1,91 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 
+const emptyFilters = {
+  genres: [],
+  countries: [],
+  languages: [],
+  collections: [],
+  yearFrom: '',
+  yearTo: '',
+  ratingFrom: '',
+  ratingTo: '',
+  runtimeFrom: '',
+  runtimeTo: ''
+}
+
+const listFilterKeys = ['genres', 'countries', 'languages', 'collections']
+const rangeFilterKeys = ['yearFrom', 'yearTo', 'ratingFrom', 'ratingTo', 'runtimeFrom', 'runtimeTo']
+
+function getFiltersFromParams(params) {
+  const filters = { ...emptyFilters }
+
+  listFilterKeys.forEach((key) => {
+    filters[key] = params.getAll(key).flatMap((value) => value.split(',')).map((value) => value.trim()).filter(Boolean)
+  })
+
+  rangeFilterKeys.forEach((key) => {
+    filters[key] = params.get(key) || ''
+  })
+
+  return filters
+}
+
+function hasActiveFilters(filters) {
+  return listFilterKeys.some((key) => filters[key].length > 0) || rangeFilterKeys.some((key) => filters[key])
+}
+
+function buildMoviesUrl({ limit, offset, search, filters }) {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+
+  if (search) params.set('search', search)
+
+  listFilterKeys.forEach((key) => {
+    filters[key].forEach((value) => params.append(key, value))
+  })
+
+  rangeFilterKeys.forEach((key) => {
+    if (filters[key]) params.set(key, filters[key])
+  })
+
+  return `/api/movies?${params.toString()}`
+}
+
 function Home({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') || ''
+  const initialFilters = getFiltersFromParams(searchParams)
+
   const [movies, setMovies] = useState([])
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [selectedMovie, setSelectedMovie] = useState(null)
-  const [search, setSearch] = useState('')
-  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState(initialSearch)
+  const [searchInput, setSearchInput] = useState(initialSearch)
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [filters, setFilters] = useState(initialFilters)
+  const [filterOptions, setFilterOptions] = useState(null)
+  const [showFilters, setShowFilters] = useState(false)
   const limit = 40
 
   useEffect(() => {
-    loadMovies()
+    loadFilterOptions()
   }, [])
+
+  useEffect(() => {
+    const nextSearch = searchParams.get('search') || ''
+    const nextFilters = getFiltersFromParams(searchParams)
+
+    setSearch(nextSearch)
+    setSearchInput(nextSearch)
+    setFilters(nextFilters)
+    setOffset(0)
+    setHasMore(true)
+    loadMovies(true, nextSearch, nextFilters)
+  }, [searchParams])
 
   useEffect(() => {
     const query = searchInput.trim()
@@ -46,75 +116,132 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     }
   }, [searchInput])
 
-  const loadMovies = async (reset = false, searchTerm = search) => {
+  const loadFilterOptions = async () => {
+    try {
+      const res = await fetch('/api/movies/filters')
+      const data = await res.json()
+      setFilterOptions(data)
+    } catch (err) {
+      console.error('Error loading filters:', err)
+    }
+  }
+
+  const loadMovies = async (reset = false, searchTerm = search, activeFilters = filters) => {
     try {
       const currentOffset = reset ? 0 : offset
-      const res = await fetch(`/api/movies?limit=${limit}&offset=${currentOffset}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`)
+      const res = await fetch(buildMoviesUrl({
+        limit,
+        offset: currentOffset,
+        search: searchTerm,
+        filters: activeFilters
+      }))
       const data = await res.json()
+      const nextMovies = data.movies || []
 
-      if (data.movies && data.movies.length > 0) {
-        const moviesWithDetails = await Promise.all(
-          data.movies.map(async (movie) => {
-            try {
-              const detailRes = await fetch(`/api/movies/${movie.id}`)
-              if (detailRes.ok) {
-                const detail = await detailRes.json()
-                return { ...movie, ...detail }
-              }
-              return movie
-            } catch (err) {
-              return movie
-            }
-          })
-        )
-
-        if (reset) {
-          setMovies(moviesWithDetails)
-          setOffset(data.movies.length)
-        } else {
-          setMovies([...movies, ...moviesWithDetails])
-          setOffset(offset + data.movies.length)
-        }
-        setHasMore(data.movies.length >= limit)
+      if (reset) {
+        setMovies(nextMovies)
+        setOffset(nextMovies.length)
       } else {
-        if (reset) setMovies([])
-        setHasMore(false)
+        setMovies((currentMovies) => [...currentMovies, ...nextMovies])
+        setOffset(currentOffset + nextMovies.length)
       }
+
+      setHasMore(nextMovies.length >= limit)
     } catch (err) {
       console.error('Error loading movies:', err)
     }
+  }
+
+  const updateSearchParams = (nextSearch, nextFilters) => {
+    const params = new URLSearchParams()
+
+    if (nextSearch) params.set('search', nextSearch)
+
+    listFilterKeys.forEach((key) => {
+      nextFilters[key].forEach((value) => params.append(key, value))
+    })
+
+    rangeFilterKeys.forEach((key) => {
+      if (nextFilters[key]) params.set(key, nextFilters[key])
+    })
+
+    setSearchParams(params)
   }
 
   const handleSearch = (e) => {
     e.preventDefault()
     const query = searchInput.trim()
 
-    setSearch(query)
-    setOffset(0)
-    setHasMore(true)
     setShowSuggestions(false)
-    loadMovies(true, query)
+    updateSearchParams(query, filters)
   }
 
   const handleSuggestionSelect = (suggestion) => {
     const query = suggestion.title
 
     setSearchInput(query)
-    setSearch(query)
     setSuggestions([])
     setShowSuggestions(false)
-    setOffset(0)
-    setHasMore(true)
-    loadMovies(true, query)
+    updateSearchParams(query, filters)
+  }
+
+  const toggleListFilter = (key, value) => {
+    setFilters((currentFilters) => {
+      const exists = currentFilters[key].includes(value)
+      return {
+        ...currentFilters,
+        [key]: exists
+          ? currentFilters[key].filter((item) => item !== value)
+          : [...currentFilters[key], value]
+      }
+    })
+  }
+
+  const updateRangeFilter = (key, value) => {
+    setFilters((currentFilters) => ({ ...currentFilters, [key]: value }))
+  }
+
+  const applyFilters = () => {
+    updateSearchParams(searchInput.trim(), filters)
+  }
+
+  const clearFilters = () => {
+    const nextFilters = { ...emptyFilters }
+    setFilters(nextFilters)
+    updateSearchParams(searchInput.trim(), nextFilters)
   }
 
   const handleMovieClick = (movie) => {
     setSelectedMovie(movie)
   }
 
+  const renderFacetList = (title, key, options = [], maxVisible = 12) => {
+    const visibleOptions = options.slice(0, maxVisible)
+
+    return (
+      <section className="filter-group">
+        <h3 className="filter-group__title">{title}</h3>
+        <div className="filter-options">
+          {visibleOptions.map((option) => (
+            <label key={option.value} className="filter-option">
+              <input
+                type="checkbox"
+                checked={filters[key].includes(option.value)}
+                onChange={() => toggleListFilter(key, option.value)}
+              />
+              <span className="filter-option__label">{option.value}</span>
+              <span className="filter-option__count">{option.count}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   return (
     <div className="container">
       <h1 className="page__title">Movies</h1>
+
       <form className="search-form" onSubmit={handleSearch}>
         <div className="search-field">
           <input
@@ -152,23 +279,121 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
           )}
         </div>
         <button type="submit" className="btn btn--primary">Search</button>
+        <button type="button" className="btn btn--secondary filters-toggle" onClick={() => setShowFilters(!showFilters)}>
+          Filters
+        </button>
       </form>
-      <div className="movies-grid">
-        {movies.map((movie) => (
-          <MovieCard
-            key={movie.id}
-            movie={movie}
-            onClick={() => handleMovieClick(movie)}
-          />
-        ))}
+
+      <div className="movies-layout">
+        <aside className={`filters-panel ${showFilters ? 'filters-panel--open' : ''}`}>
+          <div className="filters-panel__header">
+            <h2>Filters</h2>
+            {hasActiveFilters(filters) && (
+              <button type="button" className="filters-panel__clear" onClick={clearFilters}>Clear</button>
+            )}
+          </div>
+
+          {filterOptions ? (
+            <>
+              {renderFacetList('Genres', 'genres', filterOptions.genres, 20)}
+              {renderFacetList('Countries', 'countries', filterOptions.countries, 14)}
+              {renderFacetList('Languages', 'languages', filterOptions.languages, 12)}
+              {renderFacetList('Collections', 'collections', filterOptions.collections, 10)}
+
+              <section className="filter-group">
+                <h3 className="filter-group__title">Year</h3>
+                <div className="range-filter">
+                  <input
+                    type="number"
+                    placeholder={filterOptions.yearRange?.min || 'From'}
+                    value={filters.yearFrom}
+                    onChange={(e) => updateRangeFilter('yearFrom', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    placeholder={filterOptions.yearRange?.max || 'To'}
+                    value={filters.yearTo}
+                    onChange={(e) => updateRangeFilter('yearTo', e.target.value)}
+                  />
+                </div>
+              </section>
+
+              <section className="filter-group">
+                <h3 className="filter-group__title">Rating</h3>
+                <div className="range-filter">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    placeholder="From"
+                    value={filters.ratingFrom}
+                    onChange={(e) => updateRangeFilter('ratingFrom', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    placeholder="To"
+                    value={filters.ratingTo}
+                    onChange={(e) => updateRangeFilter('ratingTo', e.target.value)}
+                  />
+                </div>
+              </section>
+
+              <section className="filter-group">
+                <h3 className="filter-group__title">Runtime</h3>
+                <div className="range-filter">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="From"
+                    value={filters.runtimeFrom}
+                    onChange={(e) => updateRangeFilter('runtimeFrom', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="To"
+                    value={filters.runtimeTo}
+                    onChange={(e) => updateRangeFilter('runtimeTo', e.target.value)}
+                  />
+                </div>
+              </section>
+
+              <button type="button" className="btn btn--primary btn--full" onClick={applyFilters}>Apply Filters</button>
+            </>
+          ) : (
+            <p className="filters-panel__loading">Loading filters...</p>
+          )}
+        </aside>
+
+        <section className="movies-results">
+          <div className="movies-grid">
+            {movies.map((movie) => (
+              <MovieCard
+                key={movie.id}
+                movie={movie}
+                onClick={() => handleMovieClick(movie)}
+              />
+            ))}
+          </div>
+
+          {movies.length === 0 && !hasMore && (
+            <p className="movies-empty">No movies found for these search filters.</p>
+          )}
+
+          {hasMore && movies.length > 0 && (
+            <div className="pagination">
+              <button className="btn btn--secondary" onClick={() => loadMovies()}>
+                Load More
+              </button>
+            </div>
+          )}
+        </section>
       </div>
-      {hasMore && movies.length > 0 && (
-        <div className="pagination">
-          <button className="btn btn--secondary" onClick={() => loadMovies()}>
-            Load More
-          </button>
-        </div>
-      )}
+
       {selectedMovie && (
         <MovieModal
           movie={selectedMovie}

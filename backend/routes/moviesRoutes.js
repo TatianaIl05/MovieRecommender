@@ -3,6 +3,7 @@ const router = express.Router();
 const moviesController = require('../controllers/moviesController');
 
 router.get('/movies', moviesController.getMovies);
+router.get('/movies/filters', moviesController.getMovieFilters);
 router.get('/movies/suggest', moviesController.getMovieSuggestions);
 router.get('/movies/popular', moviesController.getPopularMovies);
 router.post('/movies/by-ids', moviesController.getMoviesByIds);
