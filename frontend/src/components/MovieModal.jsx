@@ -44,6 +44,24 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
     }
   }
 
+  const handleRemoveFromFavorites = async () => {
+    if (!user || !movie.id) return
+
+    try {
+      const res = await fetch(`/api/favorites/${user.id}/${movie.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        const newFavorites = new Set(favorites)
+        newFavorites.delete(movie.id)
+        setFavorites(newFavorites)
+      }
+    } catch (err) {
+      console.error('Error removing from favorites:', err)
+    }
+  }
+
   const handleAddToWatchLater = async () => {
     if (!user || !movie.id) return
 
@@ -62,6 +80,24 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
     }
   }
 
+  const handleRemoveFromWatchLater = async () => {
+    if (!user || !movie.id) return
+
+    try {
+      const res = await fetch(`/api/watch-later/${user.id}/${movie.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        const newWatchLater = new Set(watchLater)
+        newWatchLater.delete(movie.id)
+        setWatchLater(newWatchLater)
+      }
+    } catch (err) {
+      console.error('Error removing from watch later:', err)
+    }
+  }
+
   const handleAddToSelected = async () => {
     if (!user || !movie.id) return
 
@@ -77,6 +113,24 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
       }
     } catch (err) {
       console.error('Error adding to selected:', err)
+    }
+  }
+
+  const handleRemoveFromSelected = async () => {
+    if (!user || !movie.id) return
+
+    try {
+      const res = await fetch(`/api/selected/${user.id}/${movie.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        const newSelected = new Set(selected)
+        newSelected.delete(movie.id)
+        setSelected(newSelected)
+      }
+    } catch (err) {
+      console.error('Error removing from selected:', err)
     }
   }
 
@@ -128,24 +182,21 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
               <div className="modal__actions">
                 <button
                   className="btn btn--primary"
-                  onClick={handleAddToFavorites}
-                  disabled={isFavorite}
+                  onClick={isFavorite ? handleRemoveFromFavorites : handleAddToFavorites}
                 >
-                  {isFavorite ? 'In Favorites' : 'Add to Favorites'}
+                  {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
                 </button>
                 <button
                   className="btn btn--secondary"
-                  onClick={handleAddToWatchLater}
-                  disabled={isWatchLater}
+                  onClick={isWatchLater ? handleRemoveFromWatchLater : handleAddToWatchLater}
                 >
-                  {isWatchLater ? 'In List' : 'Watch Later'}
+                  {isWatchLater ? 'Remove from Watch Later' : 'Watch Later'}
                 </button>
                 <button
                   className="btn btn--secondary"
-                  onClick={handleAddToSelected}
-                  disabled={isSelected}
+                  onClick={isSelected ? handleRemoveFromSelected : handleAddToSelected}
                 >
-                  {isSelected ? 'Selected' : 'Add to Selected'}
+                  {isSelected ? 'Remove from Selected' : 'Add to Selected'}
                 </button>
               </div>
             )}
