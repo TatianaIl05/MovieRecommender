@@ -46,10 +46,19 @@ function hasActiveFilters(filters) {
   return listFilterKeys.some((key) => filters[key].length > 0) || rangeFilterKeys.some((key) => filters[key])
 }
 
-function buildMoviesUrl({ limit, offset, search, filters }) {
+function createRandomSeed() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function buildMoviesUrl({ limit, offset, search, filters, randomSeed }) {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  const shouldShuffle = !search && !hasActiveFilters(filters)
 
   if (search) params.set('search', search)
+  if (shouldShuffle) {
+    params.set('shuffle', '1')
+    params.set('seed', randomSeed)
+  }
 
   listFilterKeys.forEach((key) => {
     filters[key].forEach((value) => params.append(key, value))
@@ -79,6 +88,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const [filterOptions, setFilterOptions] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
   const [openFilterGroups, setOpenFilterGroups] = useState(initialOpenFilterGroups)
+  const [randomSeed] = useState(createRandomSeed)
   const limit = 40
 
   useEffect(() => {
@@ -143,7 +153,8 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
         limit,
         offset: currentOffset,
         search: searchTerm,
-        filters: activeFilters
+        filters: activeFilters,
+        randomSeed
       }))
       const data = await res.json()
       const nextMovies = data.movies || []

@@ -49,6 +49,19 @@ function buildMovieFilters(query) {
     };
 }
 
+function hasActiveFilters(filters) {
+    return filters.genres.length > 0
+        || filters.countries.length > 0
+        || filters.languages.length > 0
+        || filters.collections.length > 0
+        || filters.yearFrom !== null
+        || filters.yearTo !== null
+        || filters.ratingFrom !== null
+        || filters.ratingTo !== null
+        || filters.runtimeFrom !== null
+        || filters.runtimeTo !== null;
+}
+
 function buildMoviesWhereClause(filters) {
     const clauses = [];
     const params = [];
@@ -116,8 +129,12 @@ function buildMoviesWhereClause(filters) {
     };
 }
 
-function buildMoviesOrderClause(searchParam) {
+function buildMoviesOrderClause(searchParam, shuffleParam) {
     if (!searchParam) {
+        if (shuffleParam) {
+            return `ORDER BY md5(id::text || ${shuffleParam}), popularity_norm DESC NULLS LAST`;
+        }
+
         return 'ORDER BY popularity_norm DESC NULLS LAST, vote_average DESC NULLS LAST';
     }
 
@@ -143,10 +160,17 @@ async function getMovies(req, res) {
         const offset = parseInt(req.query.offset) || 0;
         const filters = buildMovieFilters(req.query);
         const { whereSql, params, searchParam } = buildMoviesWhereClause(filters);
-        const orderSql = buildMoviesOrderClause(searchParam);
+        const shouldShuffle = req.query.shuffle === '1' && !filters.search && !hasActiveFilters(filters);
+        const shuffleParam = shouldShuffle ? `$${params.length + 1}` : null;
+        const orderSql = buildMoviesOrderClause(searchParam, shuffleParam);
 
-        const limitParam = `$${params.length + 1}`;
-        const offsetParam = `$${params.length + 2}`;
+        const queryParams = [...params];
+        if (shouldShuffle) {
+            queryParams.push(String(req.query.seed || 'default'));
+        }
+
+        const limitParam = `$${queryParams.length + 1}`;
+        const offsetParam = `$${queryParams.length + 2}`;
 
         const result = await movies_pool.query(
             `
@@ -156,7 +180,7 @@ async function getMovies(req, res) {
                 ${orderSql}
                 LIMIT ${limitParam} OFFSET ${offsetParam}
             `,
-            [...params, limit, offset]
+            [...queryParams, limit, offset]
         );
 
         const total = await movies_pool.query(
