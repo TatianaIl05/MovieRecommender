@@ -283,6 +283,10 @@ a:hover {
 
 /* ===== Filters ===== */
 .movies-layout {
+    display: block;
+}
+
+.movies-layout--with-filters {
     display: grid;
     grid-template-columns: 260px minmax(0, 1fr);
     gap: 28px;
@@ -294,7 +298,7 @@ a:hover {
 }
 
 .filters-toggle {
-    display: none;
+    display: inline-flex;
 }
 
 .filters-panel {
@@ -337,17 +341,49 @@ a:hover {
 }
 
 .filter-group {
-    padding: 16px 0;
+    padding: 0;
     border-top: 1px solid var(--color-border);
 }
 
-.filter-group__title {
-    margin-bottom: 10px;
+.filter-group__toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    background: transparent;
+    border: none;
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--color-primary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    cursor: pointer;
+    text-align: left;
+}
+
+.filter-group__toggle:hover,
+.filter-group__toggle:focus {
+    outline: none;
+    color: var(--color-accent);
+}
+
+.filter-group__chevron {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.filter-group__content {
+    padding-bottom: 16px;
 }
 
 .filter-options {
@@ -866,22 +902,9 @@ a:hover {
         flex-direction: column;
     }
 
-    .movies-layout {
-        display: block;
-    }
-
-    .filters-toggle {
-        display: inline-flex;
-    }
-
     .filters-panel {
-        display: none;
         position: static;
         margin-bottom: 24px;
-    }
-
-    .filters-panel--open {
-        display: block;
     }
 
     .modal__content {

@@ -18,6 +18,15 @@ const emptyFilters = {
 
 const listFilterKeys = ['genres', 'countries', 'languages', 'collections']
 const rangeFilterKeys = ['yearFrom', 'yearTo', 'ratingFrom', 'ratingTo', 'runtimeFrom', 'runtimeTo']
+const initialOpenFilterGroups = {
+  genres: false,
+  countries: false,
+  languages: false,
+  collections: false,
+  year: false,
+  rating: false,
+  runtime: false
+}
 
 function getFiltersFromParams(params) {
   const filters = { ...emptyFilters }
@@ -69,6 +78,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const [filters, setFilters] = useState(initialFilters)
   const [filterOptions, setFilterOptions] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [openFilterGroups, setOpenFilterGroups] = useState(initialOpenFilterGroups)
   const limit = 40
 
   useEffect(() => {
@@ -215,26 +225,46 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     setSelectedMovie(movie)
   }
 
+  const toggleFilterGroup = (key) => {
+    setOpenFilterGroups((currentGroups) => ({
+      ...currentGroups,
+      [key]: !currentGroups[key]
+    }))
+  }
+
+  const renderFilterGroup = (title, key, children) => {
+    const isOpen = openFilterGroups[key]
+
+    return (
+      <section className={`filter-group ${isOpen ? 'filter-group--open' : ''}`}>
+        <button type="button" className="filter-group__toggle" onClick={() => toggleFilterGroup(key)}>
+          <span>{title}</span>
+          <span className="filter-group__chevron">{isOpen ? '-' : '+'}</span>
+        </button>
+        {isOpen && <div className="filter-group__content">{children}</div>}
+      </section>
+    )
+  }
+
   const renderFacetList = (title, key, options = [], maxVisible = 12) => {
     const visibleOptions = options.slice(0, maxVisible)
 
-    return (
-      <section className="filter-group">
-        <h3 className="filter-group__title">{title}</h3>
-        <div className="filter-options">
-          {visibleOptions.map((option) => (
-            <label key={option.value} className="filter-option">
-              <input
-                type="checkbox"
-                checked={filters[key].includes(option.value)}
-                onChange={() => toggleListFilter(key, option.value)}
-              />
-              <span className="filter-option__label">{option.value}</span>
-              <span className="filter-option__count">{option.count}</span>
-            </label>
-          ))}
-        </div>
-      </section>
+    return renderFilterGroup(
+      title,
+      key,
+      <div className="filter-options">
+        {visibleOptions.map((option) => (
+          <label key={option.value} className="filter-option">
+            <input
+              type="checkbox"
+              checked={filters[key].includes(option.value)}
+              onChange={() => toggleListFilter(key, option.value)}
+            />
+            <span className="filter-option__label">{option.value}</span>
+            <span className="filter-option__count">{option.count}</span>
+          </label>
+        ))}
+      </div>
     )
   }
 
@@ -280,12 +310,13 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
         </div>
         <button type="submit" className="btn btn--primary">Search</button>
         <button type="button" className="btn btn--secondary filters-toggle" onClick={() => setShowFilters(!showFilters)}>
-          Filters
+          {showFilters ? 'Hide Filters' : 'Show Filters'}
         </button>
       </form>
 
-      <div className="movies-layout">
-        <aside className={`filters-panel ${showFilters ? 'filters-panel--open' : ''}`}>
+      <div className={`movies-layout ${showFilters ? 'movies-layout--with-filters' : ''}`}>
+        {showFilters && (
+        <aside className="filters-panel">
           <div className="filters-panel__header">
             <h2>Filters</h2>
             {hasActiveFilters(filters) && (
@@ -300,8 +331,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
               {renderFacetList('Languages', 'languages', filterOptions.languages, 12)}
               {renderFacetList('Collections', 'collections', filterOptions.collections, 10)}
 
-              <section className="filter-group">
-                <h3 className="filter-group__title">Year</h3>
+              {renderFilterGroup('Year', 'year',
                 <div className="range-filter">
                   <input
                     type="number"
@@ -316,10 +346,9 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
                     onChange={(e) => updateRangeFilter('yearTo', e.target.value)}
                   />
                 </div>
-              </section>
+              )}
 
-              <section className="filter-group">
-                <h3 className="filter-group__title">Rating</h3>
+              {renderFilterGroup('Rating', 'rating',
                 <div className="range-filter">
                   <input
                     type="number"
@@ -340,10 +369,9 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
                     onChange={(e) => updateRangeFilter('ratingTo', e.target.value)}
                   />
                 </div>
-              </section>
+              )}
 
-              <section className="filter-group">
-                <h3 className="filter-group__title">Runtime</h3>
+              {renderFilterGroup('Runtime', 'runtime',
                 <div className="range-filter">
                   <input
                     type="number"
@@ -360,7 +388,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
                     onChange={(e) => updateRangeFilter('runtimeTo', e.target.value)}
                   />
                 </div>
-              </section>
+              )}
 
               <button type="button" className="btn btn--primary btn--full" onClick={applyFilters}>Apply Filters</button>
             </>
@@ -368,6 +396,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
             <p className="filters-panel__loading">Loading filters...</p>
           )}
         </aside>
+        )}
 
         <section className="movies-results">
           <div className="movies-grid">
