@@ -228,8 +228,9 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
                   onClick={isDisliked ? handleRemoveFromDisliked : handleAddToDisliked}
                   title={isDisliked ? 'Allow recommendations' : 'Do not recommend this movie'}
                   aria-label={isDisliked ? 'Allow recommendations' : 'Do not recommend this movie'}
+                  aria-pressed={isDisliked}
                 >
-                  <span aria-hidden="true">♡</span>
+                  <span aria-hidden="true" className="modal__dislike-icon" />
                 </button>
                 <button
                   className="btn btn--primary"
