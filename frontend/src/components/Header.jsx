@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
-function Header({ user, setUser, setFavorites, setWatchLater, setSelected, setMovieCache }) {
+function Header({ user, setUser, setFavorites, setWatchLater, setSelected, setDisliked, setMovieCache }) {
   const location = useLocation()
   const userInitial = user?.login?.charAt(0)?.toUpperCase() || '?'
 
@@ -9,6 +9,7 @@ function Header({ user, setUser, setFavorites, setWatchLater, setSelected, setMo
     setFavorites(new Set())
     setWatchLater(new Set())
     setSelected(new Set())
+    setDisliked(new Set())
     setMovieCache(new Map())
     localStorage.removeItem('user')
   }

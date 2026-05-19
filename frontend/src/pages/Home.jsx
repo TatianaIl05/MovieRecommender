@@ -71,7 +71,7 @@ function buildMoviesUrl({ limit, offset, search, filters, randomSeed }) {
   return `/api/movies?${params.toString()}`
 }
 
-function Home({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
+function Home({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const initialSearch = searchParams.get('search') || ''
   const initialFilters = getFiltersFromParams(searchParams)
@@ -445,6 +445,8 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
           setWatchLater={setWatchLater}
           selected={selected}
           setSelected={setSelected}
+          disliked={disliked}
+          setDisliked={setDisliked}
         />
       )}
     </div>

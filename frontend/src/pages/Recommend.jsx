@@ -4,7 +4,7 @@ import MovieModal from '../components/MovieModal'
 
 const RECOMMENDER_URL = '/recommender'
 
-function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
+function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked }) {
   const [movies, setMovies] = useState([])
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
@@ -20,6 +20,11 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
       loadRecommendations()
     }
   }, [user?.id])
+
+  useEffect(() => {
+    setMovies((currentMovies) => currentMovies.filter((movie) => !disliked.has(movie.id)))
+    setAllRecommendIds((currentIds) => currentIds.filter((id) => !disliked.has(id)))
+  }, [disliked])
 
   const loadRecommendations = async (reset = false) => {
     const currentOffset = reset ? 0 : offset
@@ -37,8 +42,14 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
       const data = await res.json()
 
       if (data.favorite_movies && data.favorite_movies.length > 0) {
-        setNoFavorites(false)
-        await getRecommendationsFromApi(data.favorite_movies, currentOffset)
+        const availableFavoriteIds = data.favorite_movies.filter((id) => !disliked.has(id))
+        if (availableFavoriteIds.length > 0) {
+          setNoFavorites(false)
+          await getRecommendationsFromApi(availableFavoriteIds, currentOffset)
+        } else {
+          setNoFavorites(true)
+          await loadPopularMovies(currentOffset)
+        }
       } else {
         setNoFavorites(true)
         await loadPopularMovies(currentOffset)
@@ -54,7 +65,6 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
 
   const getRecommendationsFromApi = async (favoriteIds, currentOffset) => {
     try {
-      const allIds = favoriteIds
       let recommendIds = allRecommendIds
 
       if (currentOffset === 0) {
@@ -67,7 +77,9 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         const data = await res.json()
 
         if (data.recommendations && data.recommendations.length > 0) {
-          recommendIds = data.recommendations.map(rec => rec.tmdb_id)
+          recommendIds = data.recommendations
+            .map(rec => rec.tmdb_id)
+            .filter((id) => !disliked.has(id))
           setAllRecommendIds(recommendIds)
         } else {
           setError('No recommendations found')
@@ -90,14 +102,10 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
 
       const moviesData = await moviesRes.json()
 
-      if (currentOffset === 0) {
-        setMovies(moviesData)
-      } else {
-        setMovies([...movies, ...moviesData])
-      }
+      setMovies((currentMovies) => currentOffset === 0 ? moviesData : [...currentMovies, ...moviesData])
 
-      setOffset(currentOffset + moviesData.length)
-      setHasMore(moviesData.length >= limit)
+      setOffset(currentOffset + pageIds.length)
+      setHasMore(pageIds.length >= limit)
     } catch (err) {
       console.error('Error getting recommendations:', err)
       setError('Failed to load recommendations')
@@ -110,8 +118,9 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
       const data = await res.json()
 
       if (data.movies && data.movies.length > 0) {
+        const allowedMovies = data.movies.filter((movie) => !disliked.has(movie.id))
         const moviesWithDetails = await Promise.all(
-          data.movies.map(async (movie) => {
+          allowedMovies.map(async (movie) => {
             try {
               const detailRes = await fetch(`/api/movies/${movie.id}`)
               if (detailRes.ok) {
@@ -125,11 +134,13 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
           })
         )
 
-        if (currentOffset === 0) {
-          setMovies(moviesWithDetails)
-        } else {
-          setMovies([...movies, ...moviesWithDetails])
+        if (moviesWithDetails.length === 0 && data.movies.length >= limit) {
+          setOffset(currentOffset + data.movies.length)
+          await loadPopularMovies(currentOffset + data.movies.length)
+          return
         }
+
+        setMovies((currentMovies) => currentOffset === 0 ? moviesWithDetails : [...currentMovies, ...moviesWithDetails])
 
         setOffset(currentOffset + data.movies.length)
         setHasMore(data.movies.length >= limit)
@@ -193,6 +204,8 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
           setWatchLater={setWatchLater}
           selected={selected}
           setSelected={setSelected}
+          disliked={disliked}
+          setDisliked={setDisliked}
         />
       )}
     </div>

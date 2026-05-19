@@ -35,6 +35,7 @@ function App() {
   const [favorites, setFavorites] = useState(new Set())
   const [watchLater, setWatchLater] = useState(new Set())
   const [selected, setSelected] = useState(new Set())
+  const [disliked, setDisliked] = useState(new Set())
   const [movieCache, setMovieCache] = useState(loadMovieCache)
 
   useEffect(() => {
@@ -54,21 +55,24 @@ function App() {
 
     const loadUserLists = async () => {
       try {
-        const [favoritesRes, watchLaterRes, selectedRes] = await Promise.all([
+        const [favoritesRes, watchLaterRes, selectedRes, dislikedRes] = await Promise.all([
           fetch(`/api/favorites/${user.id}`),
           fetch(`/api/watch-later/${user.id}`),
-          fetch(`/api/selected/${user.id}`)
+          fetch(`/api/selected/${user.id}`),
+          fetch(`/api/disliked/${user.id}`)
         ])
 
-        const [favoritesData, watchLaterData, selectedData] = await Promise.all([
+        const [favoritesData, watchLaterData, selectedData, dislikedData] = await Promise.all([
           favoritesRes.json(),
           watchLaterRes.json(),
-          selectedRes.json()
+          selectedRes.json(),
+          dislikedRes.json()
         ])
 
         setFavorites(new Set(favoritesData.favorite_movies || []))
         setWatchLater(new Set(watchLaterData.watch_later_movies || []))
         setSelected(new Set(selectedData.selected_movies || []))
+        setDisliked(new Set(dislikedData.disliked_movies || []))
       } catch (err) {
         console.error('Error loading user lists:', err)
       }
@@ -92,15 +96,15 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <Header user={user} setUser={setUser} setFavorites={setFavorites} setWatchLater={setWatchLater} setSelected={setSelected} setMovieCache={setMovieCache} />
+        <Header user={user} setUser={setUser} setFavorites={setFavorites} setWatchLater={setWatchLater} setSelected={setSelected} setDisliked={setDisliked} setMovieCache={setMovieCache} />
         <main className="main">
           <Routes>
-            <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} />} />
+            <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} />} />
             <Route path="/auth" element={<Auth setUser={setUser} />} />
-            <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
-            <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} /> : <Navigate to="/auth" />} />
-            <Route path="/watch-later" element={user ? <WatchLater user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
-            <Route path="/selected" element={user ? <Selected user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
+            <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
+            <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} /> : <Navigate to="/auth" />} />
+            <Route path="/watch-later" element={user ? <WatchLater user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
+            <Route path="/selected" element={user ? <Selected user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
           </Routes>
         </main>
       </div>

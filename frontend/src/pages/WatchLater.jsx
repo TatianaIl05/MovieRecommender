@@ -3,7 +3,7 @@ import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 import { getMoviesByIds } from '../utils/movieCache'
 
-function WatchLater({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, movieCache, setMovieCache }) {
+function WatchLater({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked, movieCache, setMovieCache }) {
   const [movies, setMovies] = useState([])
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -83,6 +83,8 @@ function WatchLater({ user, favorites, setFavorites, watchLater, setWatchLater, 
           setWatchLater={setWatchLater}
           selected={selected}
           setSelected={setSelected}
+          disliked={disliked}
+          setDisliked={setDisliked}
         />
       )}
     </div>

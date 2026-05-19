@@ -42,7 +42,7 @@ async function addFavorite(req, res) {
         const movieIds = movies.map(m => m.movie_id);
 
         const user = await users_pool.query(
-            `SELECT favorite_movie_ids FROM users_fav WHERE user_id = $1`,
+            `SELECT favorite_movie_ids, disliked_movie_ids FROM users_fav WHERE user_id = $1`,
             [user_id]
         );
 
@@ -54,11 +54,13 @@ async function addFavorite(req, res) {
             );
         } else {
             const current = user.rows[0].favorite_movie_ids || [];
+            const currentDisliked = user.rows[0].disliked_movie_ids || [];
             const newIds = [...new Set([...current, ...movieIds])];
+            const newDisliked = currentDisliked.filter(id => !movieIds.includes(id));
 
             await users_pool.query(
-                `UPDATE users_fav SET favorite_movie_ids = $1 WHERE user_id = $2`,
-                [newIds, user_id]
+                `UPDATE users_fav SET favorite_movie_ids = $1, disliked_movie_ids = $2 WHERE user_id = $3`,
+                [newIds, newDisliked, user_id]
             );
         }
 
@@ -306,6 +308,112 @@ async function removeSelected(req, res) {
     }
 }
 
+async function getDisliked(req, res) {
+    try {
+        const user_id = parseInt(req.params.user_id, 10);
+        if (isNaN(user_id)) {
+            return res.status(400).json({ error: 'Invalid user_id format' });
+        }
+
+        const result = await users_pool.query(
+            `SELECT disliked_movie_ids
+            FROM users_fav
+            WHERE user_id = $1`,
+            [user_id]
+        );
+
+        const movieIds = result.rows.length > 0 ? (result.rows[0].disliked_movie_ids || []) : [];
+
+        res.json({
+            user_id,
+            disliked_movies: movieIds,
+            total_count: movieIds.length
+        });
+    } catch (err) {
+        console.error('Error fetching disliked movies:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+async function addDisliked(req, res) {
+    try {
+        const user_id = parseInt(req.params.user_id, 10);
+        const { movies } = req.body;
+
+        if (!movies || !Array.isArray(movies)) {
+            return res.status(400).json({ error: 'movies is required and must be an array' });
+        }
+        if (isNaN(user_id)) {
+            return res.status(400).json({ error: 'Invalid user_id' });
+        }
+
+        const movieIds = movies.map(m => m.movie_id);
+
+        const user = await users_pool.query(
+            `SELECT disliked_movie_ids, favorite_movie_ids FROM users_fav WHERE user_id = $1`,
+            [user_id]
+        );
+
+        if (user.rows.length === 0) {
+            await users_pool.query(
+                `INSERT INTO users_fav (user_id, disliked_movie_ids)
+                VALUES ($1, $2)`,
+                [user_id, movieIds]
+            );
+        } else {
+            const currentDisliked = user.rows[0].disliked_movie_ids || [];
+            const currentFavorites = user.rows[0].favorite_movie_ids || [];
+            const newDisliked = [...new Set([...currentDisliked, ...movieIds])];
+            const newFavorites = currentFavorites.filter(id => !movieIds.includes(id));
+
+            await users_pool.query(
+                `UPDATE users_fav
+                SET disliked_movie_ids = $1, favorite_movie_ids = $2
+                WHERE user_id = $3`,
+                [newDisliked, newFavorites, user_id]
+            );
+        }
+
+        res.json({
+            status: 'success',
+            message: `Processed ${movies.length} movies`,
+            added_count: movieIds.length
+        });
+
+    } catch (err) {
+        console.error('Error adding to disliked movies:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+async function removeDisliked(req, res) {
+    try {
+        const user_id = parseInt(req.params.user_id, 10);
+        const movie_id = parseInt(req.params.movie_id, 10);
+
+        const result = await users_pool.query(
+            `UPDATE users_fav
+            SET disliked_movie_ids = ARRAY_REMOVE(disliked_movie_ids, $1)
+            WHERE user_id = $2 AND $1 = ANY(disliked_movie_ids)
+            RETURNING disliked_movie_ids`,
+            [movie_id, user_id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Movie not in disliked list' });
+        }
+
+        res.json({
+            status: 'success',
+            message: `Movie ${movie_id} removed`,
+            remaining_count: result.rows[0].disliked_movie_ids.length
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
 
 module.exports = {
     getFavorites,
@@ -316,5 +424,8 @@ module.exports = {
     removeWatchLater,
     getSelected,
     addSelected,
-    removeSelected
+    removeSelected,
+    getDisliked,
+    addDisliked,
+    removeDisliked
 };

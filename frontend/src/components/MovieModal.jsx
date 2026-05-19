@@ -1,6 +1,6 @@
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w1280'
 
-function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected }) {
+function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked }) {
   if (!movie) return null
 
   const getPosterUrl = (path) => {
@@ -38,6 +38,9 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
 
       if (res.ok) {
         setFavorites(new Set([...favorites, movie.id]))
+        const newDisliked = new Set(disliked)
+        newDisliked.delete(movie.id)
+        setDisliked(newDisliked)
       }
     } catch (err) {
       console.error('Error adding to favorites:', err)
@@ -134,9 +137,49 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
     }
   }
 
+  const handleAddToDisliked = async () => {
+    if (!user || !movie.id) return
+
+    try {
+      const res = await fetch(`/api/disliked/${user.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movies: [{ movie_id: movie.id }] }),
+      })
+
+      if (res.ok) {
+        setDisliked(new Set([...disliked, movie.id]))
+        const newFavorites = new Set(favorites)
+        newFavorites.delete(movie.id)
+        setFavorites(newFavorites)
+      }
+    } catch (err) {
+      console.error('Error adding to disliked movies:', err)
+    }
+  }
+
+  const handleRemoveFromDisliked = async () => {
+    if (!user || !movie.id) return
+
+    try {
+      const res = await fetch(`/api/disliked/${user.id}/${movie.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        const newDisliked = new Set(disliked)
+        newDisliked.delete(movie.id)
+        setDisliked(newDisliked)
+      }
+    } catch (err) {
+      console.error('Error removing from disliked movies:', err)
+    }
+  }
+
   const isFavorite = favorites.has(movie.id)
   const isWatchLater = watchLater.has(movie.id)
   const isSelected = selected?.has(movie.id)
+  const isDisliked = disliked?.has(movie.id)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -180,6 +223,14 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
 
             {user && (
               <div className="modal__actions">
+                <button
+                  className={`btn modal__dislike-btn ${isDisliked ? 'modal__dislike-btn--active' : ''}`}
+                  onClick={isDisliked ? handleRemoveFromDisliked : handleAddToDisliked}
+                  title={isDisliked ? 'Allow recommendations' : 'Do not recommend this movie'}
+                  aria-label={isDisliked ? 'Allow recommendations' : 'Do not recommend this movie'}
+                >
+                  <span aria-hidden="true">♡</span>
+                </button>
                 <button
                   className="btn btn--primary"
                   onClick={isFavorite ? handleRemoveFromFavorites : handleAddToFavorites}

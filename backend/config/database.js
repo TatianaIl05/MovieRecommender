@@ -86,6 +86,7 @@ async function connectToUsers() {
     while (retries > 0) {
         try {
             await users_pool.query('SELECT 1');
+            await ensureUserListSupport();
             console.log('Connected to users database');
             return;
         } catch (err) {
@@ -96,6 +97,13 @@ async function connectToUsers() {
     }
     console.error('Failed to connect to users database');
     process.exit(1);
+}
+
+async function ensureUserListSupport() {
+    await users_pool.query(`
+        ALTER TABLE users_fav
+        ADD COLUMN IF NOT EXISTS disliked_movie_ids INTEGER[] DEFAULT '{}'
+    `);
 }
 
 module.exports = {

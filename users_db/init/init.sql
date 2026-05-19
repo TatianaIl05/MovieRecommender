@@ -12,5 +12,6 @@ CREATE TABLE IF NOT EXISTS users_fav (
     user_id INTEGER,
     favorite_movie_ids INTEGER[] DEFAULT '{}',
     watch_later_movie_ids INTEGER[] DEFAULT '{}',
-    selected_movie_ids INTEGER[] DEFAULT '{}'
+    selected_movie_ids INTEGER[] DEFAULT '{}',
+    disliked_movie_ids INTEGER[] DEFAULT '{}'
 );
