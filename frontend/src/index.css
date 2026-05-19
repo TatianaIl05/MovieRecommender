@@ -884,8 +884,8 @@ a:hover {
     border-color: var(--color-error);
 }
 
-.modal__dislike-btn--active,
-.modal__dislike-btn--active:hover {
+.modal__actions .btn.modal__dislike-btn--active,
+.modal__actions .btn.modal__dislike-btn--active:hover {
     color: #fff;
     background: var(--color-error);
     border-color: var(--color-error);

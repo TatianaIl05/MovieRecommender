@@ -140,6 +140,14 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const handleAddToDisliked = async () => {
     if (!user || !movie.id) return
 
+    const nextDisliked = new Set(disliked)
+    nextDisliked.add(movie.id)
+    const nextFavorites = new Set(favorites)
+    nextFavorites.delete(movie.id)
+
+    setDisliked(nextDisliked)
+    setFavorites(nextFavorites)
+
     try {
       const res = await fetch(`/api/disliked/${user.id}`, {
         method: 'POST',
@@ -147,13 +155,12 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
         body: JSON.stringify({ movies: [{ movie_id: movie.id }] }),
       })
 
-      if (res.ok) {
-        setDisliked(new Set([...disliked, movie.id]))
-        const newFavorites = new Set(favorites)
-        newFavorites.delete(movie.id)
-        setFavorites(newFavorites)
+      if (!res.ok) {
+        throw new Error('Failed to add disliked movie')
       }
     } catch (err) {
+      setDisliked(new Set(disliked))
+      setFavorites(new Set(favorites))
       console.error('Error adding to disliked movies:', err)
     }
   }
@@ -161,17 +168,21 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const handleRemoveFromDisliked = async () => {
     if (!user || !movie.id) return
 
+    const nextDisliked = new Set(disliked)
+    nextDisliked.delete(movie.id)
+
+    setDisliked(nextDisliked)
+
     try {
       const res = await fetch(`/api/disliked/${user.id}/${movie.id}`, {
         method: 'DELETE',
       })
 
-      if (res.ok) {
-        const newDisliked = new Set(disliked)
-        newDisliked.delete(movie.id)
-        setDisliked(newDisliked)
+      if (!res.ok) {
+        throw new Error('Failed to remove disliked movie')
       }
     } catch (err) {
+      setDisliked(new Set(disliked))
       console.error('Error removing from disliked movies:', err)
     }
   }
