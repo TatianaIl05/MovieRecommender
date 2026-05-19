@@ -295,6 +295,7 @@ a:hover {
 
 .movies-results {
     grid-column: 1;
+    grid-row: 1;
     min-width: 0;
 }
 
@@ -304,6 +305,7 @@ a:hover {
 
 .filters-panel {
     grid-column: 2;
+    grid-row: 1;
     position: sticky;
     top: 88px;
     padding: 18px;
@@ -906,6 +908,7 @@ a:hover {
 
     .filters-panel {
         grid-column: auto;
+        grid-row: auto;
         position: static;
         margin-bottom: 24px;
     }
