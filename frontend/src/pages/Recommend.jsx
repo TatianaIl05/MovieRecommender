@@ -39,6 +39,10 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
 
     try {
       const res = await fetch(`/api/favorites/${user.id}`)
+      if (!res.ok) {
+        throw new Error('Failed to load favorites')
+      }
+
       const data = await res.json()
 
       if (data.favorite_movies && data.favorite_movies.length > 0) {
@@ -74,6 +78,10 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
           body: JSON.stringify({ tmdb_ids: favoriteIds, k: 30000, alpha: 0.75 }),
         })
 
+        if (!res.ok) {
+          throw new Error('Failed to load recommendations')
+        }
+
         const data = await res.json()
 
         if (data.recommendations && data.recommendations.length > 0) {
@@ -100,6 +108,10 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         body: JSON.stringify({ ids: pageIds }),
       })
 
+      if (!moviesRes.ok) {
+        throw new Error('Failed to load recommended movies')
+      }
+
       const moviesData = await moviesRes.json()
 
       setMovies((currentMovies) => currentOffset === 0 ? moviesData : [...currentMovies, ...moviesData])
@@ -115,6 +127,10 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
   const loadPopularMovies = async (currentOffset) => {
     try {
       const res = await fetch(`/api/movies/popular?limit=${limit}&offset=${currentOffset}`)
+      if (!res.ok) {
+        throw new Error('Failed to load popular movies')
+      }
+
       const data = await res.json()
 
       if (data.movies && data.movies.length > 0) {

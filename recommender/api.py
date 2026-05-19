@@ -82,6 +82,12 @@ def recommend_by_titles(request: MultiMovieRequest, req: Request):
     return {"recommendations": res}
 
 
+@app.get("/")
+def root():
+    """Root endpoint for reverse-proxy checks."""
+    return health()
+
+
 @app.get("/health")
 def health():
     """Проверка состояния сервера"""
