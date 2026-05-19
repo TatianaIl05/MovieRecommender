@@ -288,12 +288,13 @@ a:hover {
 
 .movies-layout--with-filters {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 260px;
     gap: 28px;
     align-items: start;
 }
 
 .movies-results {
+    grid-column: 1;
     min-width: 0;
 }
 
@@ -302,6 +303,7 @@ a:hover {
 }
 
 .filters-panel {
+    grid-column: 2;
     position: sticky;
     top: 88px;
     padding: 18px;
@@ -903,6 +905,7 @@ a:hover {
     }
 
     .filters-panel {
+        grid-column: auto;
         position: static;
         margin-bottom: 24px;
     }
