@@ -18,6 +18,20 @@ const emptyFilters = {
 
 const listFilterKeys = ['genres', 'countries', 'languages', 'collections']
 const rangeFilterKeys = ['yearFrom', 'yearTo', 'ratingFrom', 'ratingTo', 'runtimeFrom', 'runtimeTo']
+const listFilterLabels = {
+  genres: 'Genre',
+  countries: 'Country',
+  languages: 'Language',
+  collections: 'Collection'
+}
+const rangeFilterLabels = {
+  yearFrom: 'Year from',
+  yearTo: 'Year to',
+  ratingFrom: 'Rating from',
+  ratingTo: 'Rating to',
+  runtimeFrom: 'Runtime from',
+  runtimeTo: 'Runtime to'
+}
 const initialOpenFilterGroups = {
   genres: false,
   countries: false,
@@ -90,6 +104,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const [openFilterGroups, setOpenFilterGroups] = useState(initialOpenFilterGroups)
   const [randomSeed] = useState(createRandomSeed)
   const limit = 40
+  const appliedFilters = getFiltersFromParams(searchParams)
 
   useEffect(() => {
     loadFilterOptions()
@@ -232,6 +247,28 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     updateSearchParams(searchInput.trim(), nextFilters)
   }
 
+  const removeSearch = () => {
+    setSearchInput('')
+    updateSearchParams('', appliedFilters)
+  }
+
+  const removeAppliedListFilter = (key, value) => {
+    const nextFilters = {
+      ...appliedFilters,
+      [key]: appliedFilters[key].filter((item) => item !== value)
+    }
+
+    setFilters(nextFilters)
+    updateSearchParams(search, nextFilters)
+  }
+
+  const removeAppliedRangeFilter = (key) => {
+    const nextFilters = { ...appliedFilters, [key]: '' }
+
+    setFilters(nextFilters)
+    updateSearchParams(search, nextFilters)
+  }
+
   const handleMovieClick = (movie) => {
     setSelectedMovie(movie)
   }
@@ -279,51 +316,72 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     )
   }
 
+  const activeFilterChips = [
+    ...listFilterKeys.flatMap((key) => appliedFilters[key].map((value) => ({
+      key: `${key}:${value}`,
+      label: `${listFilterLabels[key]}: ${value}`,
+      onRemove: () => removeAppliedListFilter(key, value)
+    }))),
+    ...rangeFilterKeys
+      .filter((key) => appliedFilters[key])
+      .map((key) => ({
+        key,
+        label: `${rangeFilterLabels[key]}: ${appliedFilters[key]}`,
+        onRemove: () => removeAppliedRangeFilter(key)
+      }))
+  ]
+
   return (
     <div className="container">
-      <h1 className="page__title">Movies</h1>
+      <section className="home-hero">
+        <p className="home-hero__eyebrow">Curated cinema discovery</p>
+        <h1 className="home-hero__title">Find a film for the mood you are in.</h1>
+        <p className="home-hero__text">
+          Explore a warm, weighted catalog where popularity guides the feed, filters refine the mood, and your lists shape future recommendations.
+        </p>
 
-      <form className="search-form" onSubmit={handleSearch}>
-        <div className="search-field">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search movies..."
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value)
-              setShowSuggestions(true)
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-            autoComplete="off"
-          />
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="search-suggestions">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  className="search-suggestion"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleSuggestionSelect(suggestion)}
-                >
-                  <span className="search-suggestion__title">{suggestion.title}</span>
-                  {suggestion.release_date && (
-                    <span className="search-suggestion__year">
-                      {new Date(suggestion.release_date).getFullYear()}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <button type="submit" className="btn btn--primary">Search</button>
-        <button type="button" className="btn btn--secondary filters-toggle" onClick={() => setShowFilters(!showFilters)}>
-          {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </button>
-      </form>
+        <form className="search-form home-hero__search" onSubmit={handleSearch}>
+          <div className="search-field">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search movies..."
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value)
+                setShowSuggestions(true)
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+              autoComplete="off"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="search-suggestions">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    className="search-suggestion"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSuggestionSelect(suggestion)}
+                  >
+                    <span className="search-suggestion__title">{suggestion.title}</span>
+                    {suggestion.release_date && (
+                      <span className="search-suggestion__year">
+                        {new Date(suggestion.release_date).getFullYear()}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button type="submit" className="btn btn--primary">Search</button>
+          <button type="button" className="btn btn--secondary filters-toggle" onClick={() => setShowFilters(!showFilters)}>
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+        </form>
+      </section>
 
       <div className={`movies-layout ${showFilters ? 'movies-layout--with-filters' : ''}`}>
         {showFilters && (
@@ -410,6 +468,26 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
         )}
 
         <section className="movies-results">
+          {(search || activeFilterChips.length > 0) && (
+            <div className="active-filters">
+              {search && (
+                <button type="button" className="active-filter-chip" onClick={removeSearch}>
+                  Search: {search} <span aria-hidden="true">&times;</span>
+                </button>
+              )}
+              {activeFilterChips.map((chip) => (
+                <button type="button" key={chip.key} className="active-filter-chip" onClick={chip.onRemove}>
+                  {chip.label} <span aria-hidden="true">&times;</span>
+                </button>
+              ))}
+              {activeFilterChips.length > 1 && (
+                <button type="button" className="active-filter-chip active-filter-chip--clear" onClick={clearFilters}>
+                  Clear filters
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="movies-grid">
             {movies.map((movie) => (
               <MovieCard
