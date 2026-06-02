@@ -86,6 +86,7 @@ async function connectToUsers() {
     while (retries > 0) {
         try {
             await users_pool.query('SELECT 1');
+            await ensureUserAuthSupport();
             await ensureUserListSupport();
             console.log('Connected to users database');
             return;
@@ -97,6 +98,22 @@ async function connectToUsers() {
     }
     console.error('Failed to connect to users database');
     process.exit(1);
+}
+
+async function ensureUserAuthSupport() {
+    await users_pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT TRUE NOT NULL
+    `);
+    await users_pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS email_verification_token TEXT
+    `);
+    await users_pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMP
+    `);
+    await users_pool.query('CREATE INDEX IF NOT EXISTS users_email_verification_token_idx ON users (email_verification_token)');
 }
 
 async function ensureUserListSupport() {

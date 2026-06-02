@@ -36,6 +36,13 @@ services:
       - users_db
     environment:
       NODE_ENV: production
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://movierecommender.icu}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      MAIL_FROM: ${MAIL_FROM:-}
 
   recommender:
     build: ./recommender

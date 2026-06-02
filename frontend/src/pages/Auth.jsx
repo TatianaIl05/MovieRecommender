@@ -63,9 +63,8 @@ function Auth({ setUser }) {
       const data = await res.json()
 
       if (res.ok) {
-        showMessage(setRegisterMessage, 'Registration successful! Please login.', 'success')
+        setRegisterMessage({ text: data.message || 'Registration successful! Please check your email.', type: 'success' })
         setRegisterData({ login: '', email: '', password: '', passwordConfirm: '' })
-        setTimeout(() => setActiveTab('login'), 2000)
       } else {
         showMessage(setRegisterMessage, data.error || 'Registration failed', 'error')
       }
@@ -96,11 +95,11 @@ function Auth({ setUser }) {
           <form className="auth-form" onSubmit={handleLogin}>
             <h2 className="auth-form__title">Login</h2>
             <div className="form-group">
-              <label htmlFor="loginLogin">Login</label>
+              <label htmlFor="loginLogin">Login or Email</label>
               <input
                 type="text"
                 id="loginLogin"
-                placeholder="Your login"
+                placeholder="Your login or email"
                 value={loginData.login}
                 onChange={(e) => setLoginData({ ...loginData, login: e.target.value })}
                 required

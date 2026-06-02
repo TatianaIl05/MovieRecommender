@@ -7,6 +7,7 @@ import Profile from './pages/Profile'
 import Recommend from './pages/Recommend'
 import WatchLater from './pages/WatchLater'
 import Selected from './pages/Selected'
+import VerifyEmail from './pages/VerifyEmail'
 
 const MOVIE_CACHE_KEY = 'movieCache'
 const MOVIE_CACHE_TTL = 15 * 60 * 1000
@@ -101,6 +102,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} />} />
             <Route path="/auth" element={<Auth setUser={setUser} />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
             <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} /> : <Navigate to="/auth" />} />
             <Route path="/watch-later" element={user ? <WatchLater user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />

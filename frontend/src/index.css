@@ -637,6 +637,11 @@ a:hover {
     border: 1px solid #bbf7d0;
 }
 
+.auth-link-btn {
+    margin-top: 20px;
+    text-decoration: none;
+}
+
 /* ===== Profile ===== */
 .profile-info {
     margin-bottom: 32px;
