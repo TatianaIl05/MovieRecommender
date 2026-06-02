@@ -27,7 +27,9 @@ services:
       - ./users_db/init:/docker-entrypoint-initdb.d 
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: dockerfile
     restart: always
     ports:
       - "3000:3000"
