@@ -13,6 +13,58 @@ function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+async function deliverVerificationEmail({ email, login, token }) {
+    try {
+        await sendVerificationEmail({ email, login, token });
+    } catch (mailError) {
+        console.error('Verification email error:', mailError);
+        console.log(`Email verification link for ${email}: ${buildVerificationUrl(token)}`);
+    }
+}
+
+async function resendVerificationForExistingUser({ login, email, hashedPassword }) {
+    const existing = await users_pool.query(
+        `
+            SELECT id, login, email, email_verified
+            FROM users
+            WHERE login = $1 OR lower(email) = lower($2)
+            ORDER BY CASE
+                WHEN login = $1 AND lower(email) = lower($2) THEN 0
+                WHEN login = $1 THEN 1
+                ELSE 2
+            END
+            LIMIT 1
+        `,
+        [login, email]
+    );
+
+    const user = existing.rows[0];
+    if (!user || user.email_verified || user.login !== login || user.email !== email) {
+        return null;
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const result = await users_pool.query(
+        `
+            UPDATE users
+            SET password_hash = $2,
+                email_verification_token = $3,
+                email_verification_expires_at = NOW() + ($4::text || ' hours')::interval
+            WHERE id = $1
+              AND email_verified = FALSE
+            RETURNING id, login, email, email_verified, created_at
+        `,
+        [user.id, hashedPassword, verificationToken, EMAIL_VERIFICATION_TTL_HOURS]
+    );
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    await deliverVerificationEmail({ email, login, token: verificationToken });
+    return result.rows[0];
+}
+
 async function register(req, res) {
     const login = String(req.body.login || '').trim();
     const email = normalizeEmail(req.body.email);
@@ -30,8 +82,10 @@ async function register(req, res) {
         return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
+    let hashedPassword;
+
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
+        hashedPassword = await bcrypt.hash(password, 10);
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
         const result = await users_pool.query(
@@ -50,12 +104,7 @@ async function register(req, res) {
             [login, email, hashedPassword, verificationToken, EMAIL_VERIFICATION_TTL_HOURS]
         );
 
-        try {
-            await sendVerificationEmail({ email, login, token: verificationToken });
-        } catch (mailError) {
-            console.error('Verification email error:', mailError);
-            console.log(`Email verification link for ${email}: ${buildVerificationUrl(verificationToken)}`);
-        }
+        await deliverVerificationEmail({ email, login, token: verificationToken });
 
         res.status(201).json({
             message: 'Registration successful! Please check your email to confirm your account.',
@@ -65,6 +114,14 @@ async function register(req, res) {
         console.error('Registration error:', error);
 
         if (error.code === '23505') {
+            const existingUser = await resendVerificationForExistingUser({ login, email, hashedPassword });
+            if (existingUser) {
+                return res.status(200).json({
+                    message: 'Verification email sent again. Please check your inbox.',
+                    user: existingUser
+                });
+            }
+
             const field = error.constraint.includes('login') ? 'login' : 'email';
             return res.status(409).json({ error: `User with this ${field} already exists` });
         }
