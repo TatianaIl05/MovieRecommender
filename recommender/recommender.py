@@ -73,8 +73,15 @@ class Recommender:
         exclude_set = set(pos_indices)
 
         # Векторизованная сортировка через argsort — вместо Python-цикла
-        popularity = self.tmdb['popularity_norm'].values.astype(np.float32)
-        final_scores = (sim_scores * alpha) + (popularity * (1 - alpha))
+        popularity = self.tmdb['popularity_norm'].fillna(0).values.astype(np.float32)
+        rating = self.tmdb['vote_average'].fillna(0).values.astype(np.float32) / 10.0
+        # alpha = вес similarity; (1-alpha) распределяется: 62.5% popularity, 37.5% rating
+        # При alpha=0.6: 60% similarity + 25% popularity + 15% rating
+        final_scores = (
+            (sim_scores * alpha)
+            + (popularity * (1 - alpha) * 0.625)
+            + (rating * (1 - alpha) * 0.375)
+        )
 
         # Маска для исключения входных фильмов
         mask = np.ones(len(final_scores), dtype=bool)
