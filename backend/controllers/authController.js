@@ -266,9 +266,54 @@ async function getUsers(req, res) {
     }
 }
 
+async function getPublicUserProfile(req, res) {
+    const login = String(req.params.login || '').trim();
+
+    if (!login) {
+        return res.status(400).json({ error: 'Login is required' });
+    }
+
+    try {
+        const result = await users_pool.query(
+            `
+                SELECT
+                    users.id,
+                    users.login,
+                    users.created_at,
+                    COALESCE(users_fav.favorite_movie_ids, '{}') AS favorite_movie_ids
+                FROM users
+                LEFT JOIN users_fav ON users_fav.user_id = users.id
+                WHERE lower(users.login) = lower($1)
+                  AND users.email_verified = TRUE
+                LIMIT 1
+            `,
+            [login]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = result.rows[0];
+        const favoriteMovieIds = user.favorite_movie_ids || [];
+
+        res.json({
+            id: user.id,
+            login: user.login,
+            created_at: user.created_at,
+            favorite_movie_ids: favoriteMovieIds,
+            favorites_count: favoriteMovieIds.length
+        });
+    } catch (error) {
+        console.error('Public profile error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
 module.exports = {
     register,
     login,
     verifyEmail,
-    getUsers
+    getUsers,
+    getPublicUserProfile
 };

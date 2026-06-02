@@ -6,6 +6,7 @@ import Footer from './components/Footer'
 const Home = lazy(() => import('./pages/Home'))
 const Auth = lazy(() => import('./pages/Auth'))
 const Profile = lazy(() => import('./pages/Profile'))
+const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 const Recommend = lazy(() => import('./pages/Recommend'))
 const WatchLater = lazy(() => import('./pages/WatchLater'))
 const Selected = lazy(() => import('./pages/Selected'))
@@ -115,6 +116,7 @@ function App() {
               <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} />} />
               <Route path="/auth" element={<Auth setUser={setUser} />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/u/:login" element={<PublicProfile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} />} />
               <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
               <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} /> : <Navigate to="/auth" />} />
               <Route path="/watch-later" element={user ? <WatchLater user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />

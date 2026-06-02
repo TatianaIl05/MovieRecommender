@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import MovieCard from '../components/MovieCard'
 import MovieModal from '../components/MovieModal'
 import { getMoviesByIds } from '../utils/movieCache'
@@ -59,6 +60,9 @@ function Profile({ user, favorites, setFavorites, watchLater, setWatchLater, sel
         <div className="profile-card">
           <h3>{user.login}</h3>
           <p className="profile-email">{user.email}</p>
+          <Link to={`/u/${encodeURIComponent(user.login)}`} className="btn btn--secondary profile-public-link">
+            View public profile
+          </Link>
         </div>
       </div>
       <h2 className="section-title">Favorites</h2>
