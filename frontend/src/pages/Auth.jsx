@@ -7,6 +7,8 @@ function Auth({ setUser }) {
   const [registerData, setRegisterData] = useState({ login: '', email: '', password: '', passwordConfirm: '' })
   const [loginMessage, setLoginMessage] = useState({ text: '', type: '' })
   const [registerMessage, setRegisterMessage] = useState({ text: '', type: '' })
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [registerLoading, setRegisterLoading] = useState(false)
   const navigate = useNavigate()
 
   const showMessage = (setter, text, type) => {
@@ -16,6 +18,9 @@ function Auth({ setUser }) {
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    if (loginLoading) return
+
+    setLoginLoading(true)
 
     try {
       const res = await fetch('/api/login', {
@@ -35,11 +40,14 @@ function Auth({ setUser }) {
       }
     } catch (err) {
       showMessage(setLoginMessage, 'Network error', 'error')
+    } finally {
+      setLoginLoading(false)
     }
   }
 
   const handleRegister = async (e) => {
     e.preventDefault()
+    if (registerLoading) return
 
     if (registerData.password !== registerData.passwordConfirm) {
       return showMessage(setRegisterMessage, 'Passwords do not match', 'error')
@@ -48,6 +56,8 @@ function Auth({ setUser }) {
     if (registerData.password.length < 6) {
       return showMessage(setRegisterMessage, 'Password must be at least 6 characters', 'error')
     }
+
+    setRegisterLoading(true)
 
     try {
       const res = await fetch('/api/register', {
@@ -70,6 +80,8 @@ function Auth({ setUser }) {
       }
     } catch (err) {
       showMessage(setRegisterMessage, 'Network error', 'error')
+    } finally {
+      setRegisterLoading(false)
     }
   }
 
@@ -116,7 +128,9 @@ function Auth({ setUser }) {
                 required
               />
             </div>
-            <button type="submit" className="btn btn--primary btn--full">Login</button>
+            <button type="submit" className="btn btn--primary btn--full" disabled={loginLoading}>
+              {loginLoading ? 'Logging in...' : 'Login'}
+            </button>
             {loginMessage.text && (
               <div className={`form-message ${loginMessage.type}`}>{loginMessage.text}</div>
             )}
@@ -170,7 +184,9 @@ function Auth({ setUser }) {
                 required
               />
             </div>
-            <button type="submit" className="btn btn--primary btn--full">Register</button>
+            <button type="submit" className="btn btn--primary btn--full" disabled={registerLoading}>
+              {registerLoading ? 'Registering...' : 'Register'}
+            </button>
             {registerMessage.text && (
               <div className={`form-message ${registerMessage.type}`}>{registerMessage.text}</div>
             )}

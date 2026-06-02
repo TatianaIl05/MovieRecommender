@@ -22,6 +22,12 @@ async function deliverVerificationEmail({ email, login, token }) {
     }
 }
 
+function queueVerificationEmail({ email, login, token }) {
+    setImmediate(() => {
+        deliverVerificationEmail({ email, login, token });
+    });
+}
+
 async function resendVerificationForExistingUser({ login, email, hashedPassword }) {
     const existing = await users_pool.query(
         `
@@ -61,7 +67,7 @@ async function resendVerificationForExistingUser({ login, email, hashedPassword 
         return null;
     }
 
-    await deliverVerificationEmail({ email, login, token: verificationToken });
+    queueVerificationEmail({ email, login, token: verificationToken });
     return result.rows[0];
 }
 
@@ -135,7 +141,7 @@ async function register(req, res) {
             [login, email, hashedPassword, verificationToken, EMAIL_VERIFICATION_TTL_HOURS]
         );
 
-        await deliverVerificationEmail({ email, login, token: verificationToken });
+        queueVerificationEmail({ email, login, token: verificationToken });
 
         res.status(201).json({
             message: 'Registration successful! Please check your email to confirm your account.',
