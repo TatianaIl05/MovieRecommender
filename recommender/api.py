@@ -1,4 +1,5 @@
 # ==================== api.py ====================
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,8 +64,11 @@ def get_recommender(request: Request) -> Recommender:
 @app.post("/api/recommend")
 def recommend_by_ids(request: TmdbIdsRequest, req: Request):
     """Рекомендации по списку tmdb_id"""
+    start = time.perf_counter()
     rec = get_recommender(req)
     res = rec.get_recommendations_by_tmdb_ids(request.tmdb_ids, request.k, request.alpha)
+    total = time.perf_counter() - start
+    logger.info(f"POST /api/recommend tmdb_ids={len(request.tmdb_ids)} k={request.k} alpha={request.alpha} total={total:.3f}s result_count={len(res)}")
 
     if not res:
         return {"error": "No recommendations found for the given tmdb_ids"}
@@ -74,8 +78,11 @@ def recommend_by_ids(request: TmdbIdsRequest, req: Request):
 @app.post("/api/recommend/by-title")
 def recommend_by_titles(request: MultiMovieRequest, req: Request):
     """Рекомендации по списку названий фильмов"""
+    start = time.perf_counter()
     rec = get_recommender(req)
     res = rec.get_k_movies_multi(request.movies, request.k, request.alpha)
+    total = time.perf_counter() - start
+    logger.info(f"POST /api/recommend/by-title movies={len(request.movies)} k={request.k} alpha={request.alpha} total={total:.3f}s result_count={len(res)}")
 
     if not res:
         return {"error": "No recommendations found for the given titles"}
