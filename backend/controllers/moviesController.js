@@ -179,6 +179,7 @@ async function getMovies(req, res) {
             queryParams.push(String(req.query.seed || 'default'));
         }
 
+        const fetchLimit = limit + 1;
         const limitParam = `$${queryParams.length + 1}`;
         const offsetParam = `$${queryParams.length + 2}`;
 
@@ -190,23 +191,17 @@ async function getMovies(req, res) {
                 ${orderSql}
                 LIMIT ${limitParam} OFFSET ${offsetParam}
             `,
-            [...queryParams, limit, offset]
+            [...queryParams, fetchLimit, offset]
         );
 
-        const total = await movies_pool.query(
-            `
-                SELECT COUNT(*)
-                FROM movies
-                ${whereSql}
-            `,
-            params
-        );
+        const hasMore = result.rows.length > limit;
+        const movies = hasMore ? result.rows.slice(0, limit) : result.rows;
 
         res.json({
-            total: parseInt(total.rows[0].count),
             limit,
             offset,
-            movies: result.rows
+            hasMore,
+            movies
         });
     } catch (err) {
         console.error(err);

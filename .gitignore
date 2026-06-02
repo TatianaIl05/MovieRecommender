@@ -6,3 +6,5 @@ data/
 .env.*.local
 AGENTS.md
 UPDATE_NODEJS.md
+__pycache__
+backend/node_modules

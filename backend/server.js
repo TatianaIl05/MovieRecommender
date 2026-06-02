@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const { connectToMovies, connectToUsers } = require('./config/database');
 
 const authRoutes = require('./routes/authRoutes');
@@ -11,6 +12,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
+
+const apiLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+
+app.use('/api', apiLimiter);
 
 app.use('/api', authRoutes);
 app.use('/api', moviesRoutes);

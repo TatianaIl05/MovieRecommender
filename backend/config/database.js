@@ -6,6 +6,9 @@ const movies_pool = new Pool({
     database: 'movies',
     password: 'password',
     port: 5432,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 });
 
 const users_pool = new Pool({
@@ -14,6 +17,9 @@ const users_pool = new Pool({
     database: 'users',
     password: 'password',
     port: 5432,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 });
 
 async function connectToMovies() {
@@ -48,6 +54,7 @@ async function ensureMovieSearchSupport() {
     await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_release_date_idx ON movies (release_date)');
     await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_vote_average_idx ON movies (vote_average)');
     await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_runtime_idx ON movies (runtime)');
+    await movies_pool.query('CREATE INDEX IF NOT EXISTS movies_popularity_norm_idx ON movies (popularity_norm DESC NULLS LAST)');
 }
 
 async function ensureMovieArrayColumn(columnName) {

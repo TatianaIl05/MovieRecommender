@@ -182,7 +182,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
         setOffset(currentOffset + nextMovies.length)
       }
 
-      setHasMore(nextMovies.length >= limit)
+      setHasMore(data.hasMore !== false)
     } catch (err) {
       console.error('Error loading movies:', err)
     }
