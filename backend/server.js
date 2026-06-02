@@ -9,6 +9,8 @@ const userListsRoutes = require('./routes/userListsRoutes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
@@ -18,7 +20,8 @@ const apiLimiter = rateLimit({
     max: 120,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Too many requests, please try again later.' }
+    message: { error: 'Too many requests, please try again later.' },
+    validate: { xForwardedForHeader: false }
 });
 
 app.use('/api', apiLimiter);
