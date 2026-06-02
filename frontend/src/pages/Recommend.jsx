@@ -75,7 +75,7 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         const res = await fetch(`${RECOMMENDER_URL}/api/recommend`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tmdb_ids: favoriteIds, k: 30000, alpha: 0.75 }),
+          body: JSON.stringify({ tmdb_ids: favoriteIds, k: 200, alpha: 0.6 }),
         })
 
         if (!res.ok) {

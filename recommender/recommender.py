@@ -91,7 +91,6 @@ class Recommender:
         # Топ-k индексы
         top_k = np.argsort(final_scores * mask)[::-1][:k]
 
-        t4 = time.perf_counter()
         # Быстрая сборка результата через numpy-индексацию
         result_tmdb_ids = self.tmdb.index.values[top_k]
         result_titles = self.tmdb['title'].values[top_k]
@@ -104,12 +103,13 @@ class Recommender:
             for i in range(len(top_k))
         ]
 
+        t4 = time.perf_counter()
         total = time.perf_counter() - start
         logger.info(
             f"get_recommendations_by_tmdb_ids: total={total:.3f}s "
             f"(validation={t1-start:.3f}s, vector={t2-t1:.3f}s, "
             f"similarity={t3-t2:.3f}s, scoring={t4-t3:.3f}s, "
-            f"result_build={total-t4:.3f}s) "
+            f"result_build={t4-t3:.3f}s) "
             f"ids={len(tmdb_ids)} valid={len(valid_ids)} k={k} alpha={alpha}"
         )
         return result
