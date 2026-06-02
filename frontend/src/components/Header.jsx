@@ -17,12 +17,27 @@ function Header({ user, setUser, setFavorites, setWatchLater, setSelected, setDi
   return (
     <header className="header">
       <div className="container header__inner">
-        <Link to="/" className="logo">MovieRec</Link>
+        <Link to="/" className="logo" aria-label="MovieRec home">
+          <span className="logo__mark" aria-hidden="true">MR</span>
+          <span className="logo__copy">
+            <span className="logo__name">MovieRec</span>
+            <span className="logo__tagline">curated cinema</span>
+          </span>
+        </Link>
         <nav className="nav">
           <Link to="/" className={`nav__link ${location.pathname === '/' ? 'active' : ''}`}>Movies</Link>
           <Link to="/recommend" className={`nav__link ${location.pathname === '/recommend' ? 'active' : ''}`}>Recommendations</Link>
           <Link to="/watch-later" className={`nav__link ${location.pathname === '/watch-later' ? 'active' : ''}`}>Watch Later</Link>
           <Link to="/selected" className={`nav__link ${location.pathname === '/selected' ? 'active' : ''}`}>Selected</Link>
+          <a
+            href="https://github.com/TatianaIl05/MovieRecommender"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav__link nav__link--github"
+          >
+            <span className="nav__github-dot" aria-hidden="true" />
+            GitHub
+          </a>
           {user ? (
             <>
               <Link to="/profile" className={`nav__link nav__user ${location.pathname === '/profile' ? 'active' : ''}`}>
