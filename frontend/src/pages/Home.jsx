@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import MovieCard from '../components/MovieCard'
+import LoadMoreSentinel from '../components/LoadMoreSentinel'
 import MovieGridSkeleton from '../components/MovieGridSkeleton'
 import MovieModal from '../components/MovieModal'
+import VirtualMovieGrid from '../components/VirtualMovieGrid'
 
 const emptyFilters = {
   genres: [],
@@ -41,6 +42,19 @@ const initialOpenFilterGroups = {
   year: false,
   rating: false,
   runtime: false
+}
+const RECENT_SEARCHES_KEY = 'recentMovieSearches'
+const MAX_RECENT_SEARCHES = 6
+
+function loadRecentSearches() {
+  try {
+    const value = localStorage.getItem(RECENT_SEARCHES_KEY)
+    const searches = value ? JSON.parse(value) : []
+    return Array.isArray(searches) ? searches.filter(Boolean).slice(0, MAX_RECENT_SEARCHES) : []
+  } catch (err) {
+    localStorage.removeItem(RECENT_SEARCHES_KEY)
+    return []
+  }
 }
 
 function getFiltersFromParams(params) {
@@ -104,6 +118,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const [filterOptions, setFilterOptions] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
   const [openFilterGroups, setOpenFilterGroups] = useState(initialOpenFilterGroups)
+  const [recentSearches, setRecentSearches] = useState(loadRecentSearches)
   const [randomSeed] = useState(createRandomSeed)
   const limit = 40
   const appliedFilters = getFiltersFromParams(searchParams)
@@ -172,6 +187,8 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   }
 
   const loadMovies = async (reset = false, searchTerm = search, activeFilters = filters, signal) => {
+    if (!reset && isLoading) return
+
     setIsLoading(true)
 
     try {
@@ -227,6 +244,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     const query = searchInput.trim()
 
     setShowSuggestions(false)
+    if (query) saveRecentSearch(query)
     updateSearchParams(query, filters)
   }
 
@@ -236,6 +254,29 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     setSearchInput(query)
     setSuggestions([])
     setShowSuggestions(false)
+    saveRecentSearch(query)
+    updateSearchParams(query, filters)
+  }
+
+  const saveRecentSearch = (query) => {
+    const normalizedQuery = query.trim()
+    if (!normalizedQuery) return
+
+    setRecentSearches((currentSearches) => {
+      const nextSearches = [
+        normalizedQuery,
+        ...currentSearches.filter((item) => item.toLowerCase() !== normalizedQuery.toLowerCase())
+      ].slice(0, MAX_RECENT_SEARCHES)
+
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(nextSearches))
+      return nextSearches
+    })
+  }
+
+  const applyRecentSearch = (query) => {
+    setSearchInput(query)
+    setShowSuggestions(false)
+    saveRecentSearch(query)
     updateSearchParams(query, filters)
   }
 
@@ -408,6 +449,16 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
             Surprise Me
           </button>
         </form>
+        {recentSearches.length > 0 && (
+          <div className="recent-searches">
+            <span className="recent-searches__label">Recent</span>
+            {recentSearches.map((query) => (
+              <button type="button" className="recent-searches__chip" key={query} onClick={() => applyRecentSearch(query)}>
+                {query}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className={`movies-layout ${showFilters ? 'movies-layout--with-filters' : ''}`}>
@@ -518,15 +569,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
           {isLoading && movies.length === 0 ? (
             <MovieGridSkeleton count={12} />
           ) : (
-            <div className="movies-grid">
-              {movies.map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  movie={movie}
-                  onClick={() => handleMovieClick(movie)}
-                />
-              ))}
-            </div>
+            <VirtualMovieGrid movies={movies} onMovieClick={handleMovieClick} />
           )}
 
           {movies.length === 0 && !hasMore && (
@@ -534,11 +577,14 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
           )}
 
           {hasMore && movies.length > 0 && (
-            <div className="pagination">
-              <button className="btn btn--secondary" onClick={() => loadMovies()} disabled={isLoading}>
-                {isLoading ? 'Loading...' : 'Load More'}
-              </button>
-            </div>
+            <>
+              <LoadMoreSentinel enabled={!isLoading} loading={isLoading} onLoadMore={() => loadMovies()} />
+              <div className="pagination">
+                <button className="btn btn--secondary" onClick={() => loadMovies()} disabled={isLoading}>
+                  {isLoading ? 'Loading...' : 'Load More'}
+                </button>
+              </div>
+            </>
           )}
         </section>
       </div>

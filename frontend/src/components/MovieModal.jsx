@@ -31,6 +31,16 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const handleAddToFavorites = async () => {
     if (!user || !movie.id) return
 
+    const previousFavorites = new Set(favorites)
+    const previousDisliked = new Set(disliked)
+    const nextFavorites = new Set(favorites)
+    const nextDisliked = new Set(disliked)
+    nextFavorites.add(movie.id)
+    nextDisliked.delete(movie.id)
+
+    setFavorites(nextFavorites)
+    setDisliked(nextDisliked)
+
     try {
       const res = await fetch(`/api/favorites/${user.id}`, {
         method: 'POST',
@@ -38,13 +48,12 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
         body: JSON.stringify({ movies: [{ movie_id: movie.id }] }),
       })
 
-      if (res.ok) {
-        setFavorites(new Set([...favorites, movie.id]))
-        const newDisliked = new Set(disliked)
-        newDisliked.delete(movie.id)
-        setDisliked(newDisliked)
+      if (!res.ok) {
+        throw new Error('Failed to add favorite')
       }
     } catch (err) {
+      setFavorites(previousFavorites)
+      setDisliked(previousDisliked)
       console.error('Error adding to favorites:', err)
     }
   }
@@ -52,23 +61,32 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const handleRemoveFromFavorites = async () => {
     if (!user || !movie.id) return
 
+    const previousFavorites = new Set(favorites)
+    const nextFavorites = new Set(favorites)
+    nextFavorites.delete(movie.id)
+    setFavorites(nextFavorites)
+
     try {
       const res = await fetch(`/api/favorites/${user.id}/${movie.id}`, {
         method: 'DELETE',
       })
 
-      if (res.ok) {
-        const newFavorites = new Set(favorites)
-        newFavorites.delete(movie.id)
-        setFavorites(newFavorites)
+      if (!res.ok) {
+        throw new Error('Failed to remove favorite')
       }
     } catch (err) {
+      setFavorites(previousFavorites)
       console.error('Error removing from favorites:', err)
     }
   }
 
   const handleAddToWatchLater = async () => {
     if (!user || !movie.id) return
+
+    const previousWatchLater = new Set(watchLater)
+    const nextWatchLater = new Set(watchLater)
+    nextWatchLater.add(movie.id)
+    setWatchLater(nextWatchLater)
 
     try {
       const res = await fetch(`/api/watch-later/${user.id}`, {
@@ -77,10 +95,11 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
         body: JSON.stringify({ movies: [{ movie_id: movie.id }] }),
       })
 
-      if (res.ok) {
-        setWatchLater(new Set([...watchLater, movie.id]))
+      if (!res.ok) {
+        throw new Error('Failed to add watch later')
       }
     } catch (err) {
+      setWatchLater(previousWatchLater)
       console.error('Error adding to watch later:', err)
     }
   }
@@ -88,23 +107,32 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const handleRemoveFromWatchLater = async () => {
     if (!user || !movie.id) return
 
+    const previousWatchLater = new Set(watchLater)
+    const nextWatchLater = new Set(watchLater)
+    nextWatchLater.delete(movie.id)
+    setWatchLater(nextWatchLater)
+
     try {
       const res = await fetch(`/api/watch-later/${user.id}/${movie.id}`, {
         method: 'DELETE',
       })
 
-      if (res.ok) {
-        const newWatchLater = new Set(watchLater)
-        newWatchLater.delete(movie.id)
-        setWatchLater(newWatchLater)
+      if (!res.ok) {
+        throw new Error('Failed to remove watch later')
       }
     } catch (err) {
+      setWatchLater(previousWatchLater)
       console.error('Error removing from watch later:', err)
     }
   }
 
   const handleAddToSelected = async () => {
     if (!user || !movie.id) return
+
+    const previousSelected = new Set(selected)
+    const nextSelected = new Set(selected)
+    nextSelected.add(movie.id)
+    setSelected(nextSelected)
 
     try {
       const res = await fetch(`/api/selected/${user.id}`, {
@@ -113,10 +141,11 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
         body: JSON.stringify({ movies: [{ movie_id: movie.id }] }),
       })
 
-      if (res.ok) {
-        setSelected(new Set([...selected, movie.id]))
+      if (!res.ok) {
+        throw new Error('Failed to add selected')
       }
     } catch (err) {
+      setSelected(previousSelected)
       console.error('Error adding to selected:', err)
     }
   }
@@ -124,17 +153,21 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const handleRemoveFromSelected = async () => {
     if (!user || !movie.id) return
 
+    const previousSelected = new Set(selected)
+    const nextSelected = new Set(selected)
+    nextSelected.delete(movie.id)
+    setSelected(nextSelected)
+
     try {
       const res = await fetch(`/api/selected/${user.id}/${movie.id}`, {
         method: 'DELETE',
       })
 
-      if (res.ok) {
-        const newSelected = new Set(selected)
-        newSelected.delete(movie.id)
-        setSelected(newSelected)
+      if (!res.ok) {
+        throw new Error('Failed to remove selected')
       }
     } catch (err) {
+      setSelected(previousSelected)
       console.error('Error removing from selected:', err)
     }
   }

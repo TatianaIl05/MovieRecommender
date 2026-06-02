@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react'
-import MovieCard from '../components/MovieCard'
+import LoadMoreSentinel from '../components/LoadMoreSentinel'
 import MovieGridSkeleton from '../components/MovieGridSkeleton'
 import MovieModal from '../components/MovieModal'
+import VirtualMovieGrid from '../components/VirtualMovieGrid'
 
 const RECOMMENDER_URL = '/recommender'
+const RECOMMENDATION_MIXES = {
+  balanced: { label: 'Balanced', alpha: 0.6, k: 200 },
+  popular: { label: 'More popular', alpha: 0.45, k: 200 },
+  niche: { label: 'More niche', alpha: 0.85, k: 200 },
+  rated: { label: 'Higher rated', alpha: 0.55, k: 240, sortByRating: true }
+}
 
 function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked }) {
   const [movies, setMovies] = useState([])
@@ -14,20 +21,27 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [noFavorites, setNoFavorites] = useState(false)
   const [allRecommendIds, setAllRecommendIds] = useState([])
+  const [recommendationMix, setRecommendationMix] = useState('balanced')
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareSelection, setCompareSelection] = useState([])
+  const [compareSourceIds, setCompareSourceIds] = useState(null)
   const limit = 40
+  const activeMix = RECOMMENDATION_MIXES[recommendationMix]
 
   useEffect(() => {
     if (user?.id) {
       loadRecommendations(true)
     }
-  }, [user?.id])
+  }, [user?.id, recommendationMix])
 
   useEffect(() => {
     setMovies((currentMovies) => currentMovies.filter((movie) => !disliked.has(movie.id)))
     setAllRecommendIds((currentIds) => currentIds.filter((id) => !disliked.has(id)))
   }, [disliked])
 
-  const loadRecommendations = async (reset = false) => {
+  const loadRecommendations = async (reset = false, sourceIds = compareSourceIds) => {
+    if (!reset && loading) return
+
     const currentOffset = reset ? 0 : offset
 
     setLoading(true)
@@ -39,6 +53,12 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
     }
 
     try {
+      if (sourceIds?.length) {
+        setNoFavorites(false)
+        await getRecommendationsFromApi(sourceIds, currentOffset)
+        return
+      }
+
       const res = await fetch(`/api/favorites/${user.id}`)
       if (!res.ok) {
         throw new Error('Failed to load favorites')
@@ -76,7 +96,7 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         const res = await fetch(`${RECOMMENDER_URL}/api/recommend`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tmdb_ids: favoriteIds, k: 200, alpha: 0.6 }),
+          body: JSON.stringify({ tmdb_ids: favoriteIds, k: activeMix.k, alpha: activeMix.alpha }),
         })
 
         if (!res.ok) {
@@ -114,11 +134,14 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
       }
 
       const moviesData = await moviesRes.json()
+      const nextMovies = activeMix.sortByRating
+        ? [...moviesData].sort((a, b) => Number(b.vote_average || 0) - Number(a.vote_average || 0))
+        : moviesData
 
-      setMovies((currentMovies) => currentOffset === 0 ? moviesData : [...currentMovies, ...moviesData])
+      setMovies((currentMovies) => currentOffset === 0 ? nextMovies : [...currentMovies, ...nextMovies])
 
       setOffset(currentOffset + pageIds.length)
-      setHasMore(pageIds.length >= limit)
+      setHasMore(currentOffset + pageIds.length < recommendIds.length)
     } catch (err) {
       console.error('Error getting recommendations:', err)
       setError('Failed to load recommendations')
@@ -155,9 +178,105 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
     }
   }
 
+  const handleMixChange = (mixKey) => {
+    setRecommendationMix(mixKey)
+    setCompareSourceIds(null)
+    setAllRecommendIds([])
+    setOffset(0)
+    setHasMore(true)
+  }
+
+  const toggleCompareMode = () => {
+    setCompareMode((current) => !current)
+    setCompareSelection([])
+  }
+
+  const toggleCompareMovie = (movie) => {
+    setCompareSelection((currentSelection) => {
+      const exists = currentSelection.some((item) => item.id === movie.id)
+      if (exists) return currentSelection.filter((item) => item.id !== movie.id)
+      if (currentSelection.length >= 3) return currentSelection
+      return [...currentSelection, movie]
+    })
+  }
+
+  const runCompareRecommendations = async () => {
+    if (compareSelection.length < 2) {
+      setError('Select at least 2 movies to compare')
+      return
+    }
+
+    const ids = compareSelection.map((movie) => movie.id)
+    setLoading(true)
+    setError('')
+    setNoFavorites(false)
+    setMovies([])
+    setAllRecommendIds([])
+    setOffset(0)
+    setHasMore(true)
+    setCompareSourceIds(ids)
+
+    try {
+      await getRecommendationsFromApi(ids, 0)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const clearCompareRecommendations = () => {
+    setCompareSourceIds(null)
+    setCompareSelection([])
+    setCompareMode(false)
+    setAllRecommendIds([])
+    setOffset(0)
+    setHasMore(true)
+    loadRecommendations(true, null)
+  }
+
   return (
     <div className="container">
       <h1 className="page__title">Recommendations</h1>
+
+      <div className="recommend-toolbar">
+        <div className="recommend-toolbar__group">
+          {Object.entries(RECOMMENDATION_MIXES).map(([key, mix]) => (
+            <button
+              type="button"
+              key={key}
+              className={`recommend-chip ${recommendationMix === key ? 'recommend-chip--active' : ''}`}
+              onClick={() => handleMixChange(key)}
+            >
+              {mix.label}
+            </button>
+          ))}
+        </div>
+        <div className="recommend-toolbar__group">
+          <button type="button" className={`recommend-chip ${compareMode ? 'recommend-chip--active' : ''}`} onClick={toggleCompareMode}>
+            Compare mode
+          </button>
+          {compareSourceIds && (
+            <button type="button" className="recommend-chip" onClick={clearCompareRecommendations}>
+              Back to favourites
+            </button>
+          )}
+        </div>
+      </div>
+
+      {compareMode && (
+        <div className="compare-panel">
+          <div>
+            <strong>Compare selection:</strong> {compareSelection.length}/3
+            {compareSelection.length > 0 && (
+              <span className="compare-panel__titles">
+                {' '}{compareSelection.map((movie) => movie.title).join(', ')}
+              </span>
+            )}
+          </div>
+          <button type="button" className="btn btn--primary" onClick={runCompareRecommendations} disabled={loading || compareSelection.length < 2}>
+            Find Similar
+          </button>
+        </div>
+      )}
 
       {noFavorites && (
         <div className="empty-state">
@@ -172,23 +291,24 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
       )}
 
       {movies.length > 0 && (
-        <div className="movies-grid">
-          {movies.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              onClick={() => setSelectedMovie(movie)}
-            />
-          ))}
-        </div>
+        <VirtualMovieGrid
+          movies={movies}
+          onMovieClick={setSelectedMovie}
+          compareMode={compareMode}
+          selectedIds={new Set(compareSelection.map((movie) => movie.id))}
+          onToggleSelect={toggleCompareMovie}
+        />
       )}
 
       {hasMore && movies.length > 0 && (
-        <div className="pagination">
-          <button className="btn btn--secondary" onClick={() => loadRecommendations()} disabled={loading}>
-            {loading ? 'Loading...' : 'Load More'}
-          </button>
-        </div>
+        <>
+          <LoadMoreSentinel enabled={!loading} loading={loading} onLoadMore={() => loadRecommendations()} />
+          <div className="pagination">
+            <button className="btn btn--secondary" onClick={() => loadRecommendations()} disabled={loading}>
+              {loading ? 'Loading...' : 'Load More'}
+            </button>
+          </div>
+        </>
       )}
 
       {selectedMovie && (
