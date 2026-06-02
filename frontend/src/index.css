@@ -43,10 +43,39 @@ html {
 
 body {
     font-family: var(--font-serif);
-    background: var(--color-page-bg);
+    background: linear-gradient(180deg, var(--color-page-bg) 0%, #D4C9B8 100%);
     color: var(--color-text);
     line-height: 1.6;
     min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body::before {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(156, 146, 131, 0.4) 0%, transparent 70%);
+    top: -150px;
+    right: -100px;
+}
+
+body::after {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(111, 127, 113, 0.25) 0%, transparent 70%);
+    bottom: -100px;
+    left: -80px;
 }
 
 a {
@@ -64,6 +93,8 @@ a:hover {
     max-width: var(--container-width);
     margin: 0 auto;
     padding: 0 20px;
+    position: relative;
+    z-index: 1;
 }
 
 .container--narrow {
@@ -568,8 +599,8 @@ a:hover {
 /* ===== Movies Grid ===== */
 .movies-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
     margin-bottom: 32px;
 }
 
