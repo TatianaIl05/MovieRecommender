@@ -58,11 +58,17 @@ function Profile({ user, favorites, setFavorites, watchLater, setWatchLater, sel
       <h1 className="page__title">My Profile</h1>
       <div className="profile-info">
         <div className="profile-card">
-          <h3>{user.login}</h3>
-          <p className="profile-email">{user.email}</p>
-          <Link to={`/u/${encodeURIComponent(user.login)}`} className="btn btn--secondary profile-public-link">
-            View public profile
-          </Link>
+          <div className="profile-card__avatar" aria-hidden="true">
+            {user.login.charAt(0).toUpperCase()}
+          </div>
+          <div className="profile-card__content">
+            <p className="profile-card__eyebrow">Private profile</p>
+            <h3>{user.login}</h3>
+            <p className="profile-email">{user.email}</p>
+            <Link to={`/u/${encodeURIComponent(user.login)}`} className="btn btn--secondary profile-public-link">
+              View public profile
+            </Link>
+          </div>
         </div>
       </div>
       <h2 className="section-title">Favorites</h2>
