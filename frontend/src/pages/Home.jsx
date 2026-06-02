@@ -273,6 +273,12 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     setSelectedMovie(movie)
   }
 
+  const handleSurpriseMe = () => {
+    if (movies.length === 0) return
+    const randomIndex = Math.floor(Math.random() * movies.length)
+    setSelectedMovie(movies[randomIndex])
+  }
+
   const toggleFilterGroup = (key) => {
     setOpenFilterGroups((currentGroups) => ({
       ...currentGroups,
@@ -379,6 +385,9 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
           <button type="submit" className="btn btn--primary">Search</button>
           <button type="button" className="btn btn--secondary filters-toggle" onClick={() => setShowFilters(!showFilters)}>
             {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+          <button type="button" className="btn btn--accent surprise-btn" onClick={handleSurpriseMe}>
+            Surprise Me
           </button>
         </form>
       </section>
