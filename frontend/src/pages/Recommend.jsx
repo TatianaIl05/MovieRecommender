@@ -17,7 +17,7 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
 
   useEffect(() => {
     if (user?.id) {
-      loadRecommendations()
+      loadRecommendations(true)
     }
   }, [user?.id])
 
@@ -178,7 +178,7 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         </div>
       )}
 
-      {loading && (
+      {loading && movies.length === 0 && (
         <div className="loading">
           <div className="spinner"></div>
           <p>{noFavorites ? 'Loading popular movies...' : 'Finding recommendations...'}</p>
@@ -189,7 +189,7 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         <p className="empty-state">{error}</p>
       )}
 
-      {movies.length > 0 && !loading && (
+      {movies.length > 0 && (
         <div className="movies-grid">
           {movies.map((movie) => (
             <MovieCard
@@ -201,10 +201,10 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         </div>
       )}
 
-      {hasMore && movies.length > 0 && !loading && (
+      {hasMore && movies.length > 0 && (
         <div className="pagination">
-          <button className="btn btn--secondary" onClick={() => loadRecommendations()}>
-            Load More
+          <button className="btn btn--secondary" onClick={() => loadRecommendations()} disabled={loading}>
+            {loading ? 'Loading...' : 'Load More'}
           </button>
         </div>
       )}
