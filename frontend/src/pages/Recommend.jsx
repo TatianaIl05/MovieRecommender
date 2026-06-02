@@ -135,31 +135,17 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
 
       if (data.movies && data.movies.length > 0) {
         const allowedMovies = data.movies.filter((movie) => !disliked.has(movie.id))
-        const moviesWithDetails = await Promise.all(
-          allowedMovies.map(async (movie) => {
-            try {
-              const detailRes = await fetch(`/api/movies/${movie.id}`)
-              if (detailRes.ok) {
-                const detail = await detailRes.json()
-                return { ...movie, ...detail }
-              }
-              return movie
-            } catch (err) {
-              return movie
-            }
-          })
-        )
 
-        if (moviesWithDetails.length === 0 && data.movies.length >= limit) {
+        if (allowedMovies.length === 0 && data.hasMore !== false) {
           setOffset(currentOffset + data.movies.length)
           await loadPopularMovies(currentOffset + data.movies.length)
           return
         }
 
-        setMovies((currentMovies) => currentOffset === 0 ? moviesWithDetails : [...currentMovies, ...moviesWithDetails])
+        setMovies((currentMovies) => currentOffset === 0 ? allowedMovies : [...currentMovies, ...allowedMovies])
 
         setOffset(currentOffset + data.movies.length)
-        setHasMore(data.movies.length >= limit)
+        setHasMore(data.hasMore !== false)
       } else {
         setHasMore(false)
       }

@@ -16,6 +16,10 @@ const MOVIE_LIST_FIELDS = `
     belongs_to_collection
 `;
 
+const FILTER_CACHE_TTL_MS = 10 * 60 * 1000;
+let movieFiltersCache = null;
+let movieFiltersCacheExpiresAt = 0;
+
 function parseListParam(value) {
     if (!value) return [];
 
@@ -273,16 +277,21 @@ async function getPopularMovies(req, res) {
     try {
         const limit = Math.min(parseInt(req.query.limit) || 20, 100);
         const offset = parseInt(req.query.offset) || 0;
+        const fetchLimit = limit + 1;
 
         const result = await movies_pool.query(
             `SELECT ${MOVIE_LIST_FIELDS} FROM movies ORDER BY popularity_norm DESC NULLS LAST, vote_average DESC NULLS LAST LIMIT $1 OFFSET $2`,
-            [limit, offset]
+            [fetchLimit, offset]
         );
+
+        const hasMore = result.rows.length > limit;
+        const movies = hasMore ? result.rows.slice(0, limit) : result.rows;
 
         res.json({
             limit,
             offset,
-            movies: result.rows
+            hasMore,
+            movies
         });
     } catch (err) {
         console.error(err);
@@ -299,7 +308,12 @@ async function getMoviesByIds(req, res) {
         }
 
         const result = await movies_pool.query(
-            `SELECT ${MOVIE_LIST_FIELDS} FROM movies WHERE id = ANY($1)`,
+            `
+                SELECT ${MOVIE_LIST_FIELDS}
+                FROM movies
+                WHERE id = ANY($1::int[])
+                ORDER BY array_position($1::int[], id)
+            `,
             [ids]
         );
 
@@ -312,6 +326,12 @@ async function getMoviesByIds(req, res) {
 
 async function getMovieFilters(req, res) {
     try {
+        if (movieFiltersCache && Date.now() < movieFiltersCacheExpiresAt) {
+            res.set('Cache-Control', 'public, max-age=300');
+            res.set('X-Cache', 'HIT');
+            return res.json(movieFiltersCache);
+        }
+
         const [genres, countries, languages, collections, ranges] = await Promise.all([
             getArrayFacet('genres'),
             getArrayFacet('production_countries'),
@@ -320,7 +340,7 @@ async function getMovieFilters(req, res) {
             getFilterRanges()
         ]);
 
-        res.json({
+        movieFiltersCache = {
             genres,
             countries,
             languages,
@@ -337,7 +357,12 @@ async function getMovieFilters(req, res) {
                 min: ranges.min_runtime !== null ? Number(ranges.min_runtime) : null,
                 max: ranges.max_runtime !== null ? Number(ranges.max_runtime) : null
             }
-        });
+        };
+        movieFiltersCacheExpiresAt = Date.now() + FILTER_CACHE_TTL_MS;
+
+        res.set('Cache-Control', 'public, max-age=300');
+        res.set('X-Cache', 'MISS');
+        res.json(movieFiltersCache);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });

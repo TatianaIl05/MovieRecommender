@@ -52,7 +52,7 @@ class Recommender:
         self.tmdb.index = self.tmdb.index.astype(int)
 
 
-    def get_recommendations_by_tmdb_ids(self, tmdb_ids: List[int], k: int = 10, alpha: float = 0.75) -> List[Dict]:
+    def get_recommendations_by_tmdb_ids(self, tmdb_ids: List[int], k: int = 10, alpha: float = 0.6) -> List[Dict]:
         """
         Принимает список tmdb_id.
         Возвращает k рекомендаций в виде списка словарей для JSON.
@@ -84,12 +84,17 @@ class Recommender:
         popularity = self.tmdb['popularity_norm'].values.astype(np.float32)
         final_scores = (sim_scores * alpha) + (popularity * (1 - alpha))
 
-        # Маска для исключения входных фильмов
-        mask = np.ones(len(final_scores), dtype=bool)
-        mask[list(exclude_set)] = False
+        final_scores[list(exclude_set)] = -np.inf
 
-        # Топ-k индексы
-        top_k = np.argsort(final_scores * mask)[::-1][:k]
+        top_count = min(k, len(final_scores) - len(exclude_set))
+        if top_count <= 0:
+            return []
+
+        # argpartition выбирает top-k без полной сортировки всех фильмов.
+        candidate_indices = np.argpartition(final_scores, -top_count)[-top_count:]
+        top_k = candidate_indices[np.argsort(final_scores[candidate_indices])[::-1]]
+
+        t4 = time.perf_counter()
 
         # Быстрая сборка результата через numpy-индексацию
         result_tmdb_ids = self.tmdb.index.values[top_k]
@@ -103,19 +108,19 @@ class Recommender:
             for i in range(len(top_k))
         ]
 
-        t4 = time.perf_counter()
-        total = time.perf_counter() - start
+        t5 = time.perf_counter()
+        total = t5 - start
         logger.info(
             f"get_recommendations_by_tmdb_ids: total={total:.3f}s "
             f"(validation={t1-start:.3f}s, vector={t2-t1:.3f}s, "
             f"similarity={t3-t2:.3f}s, scoring={t4-t3:.3f}s, "
-            f"result_build={t4-t3:.3f}s) "
+            f"result_build={t5-t4:.3f}s) "
             f"ids={len(tmdb_ids)} valid={len(valid_ids)} k={k} alpha={alpha}"
         )
         return result
 
 
-    def get_k_movies_multi(self, titles: List[str], k: int = 10, alpha=0.75) -> List[Dict]:
+    def get_k_movies_multi(self, titles: List[str], k: int = 10, alpha=0.6) -> List[Dict]:
         """Обёртка: ищет tmdb_id по названиям и делегирует."""
         tmdb_ids = []
         for title in titles:
