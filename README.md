@@ -1,73 +1,70 @@
-# MovieRecommender
+# Movie Recommender
 
-Веб-приложение для рекомендации фильмов на основе личных предпочтений пользователя с использованием машинного обучения.
+Movie Recommender - веб-приложение для поиска фильмов, ведения личных списков и получения персонализированных рекомендаций.
 
-## Стек технологий
+Проект объединяет React-фронтенд, Express API, две PostgreSQL базы данных и отдельный FastAPI-сервис рекомендаций. Каталог поддерживает fuzzy search по названиям, фильтры и пагинацию, а рекомендательная часть использует признаки фильмов, TF-IDF и показатель популярности.
 
-- **Frontend**: React 18 + Vite 5
-- **Backend**: Node.js 20 + Express
-- **ML-сервис**: Python 3.12 + FastAPI
-- **База данных**: PostgreSQL 16 (2 базы: movies_db, users_db)
-- **Деплой**: Docker Compose + nginx + GitHub Actions CI/CD
+## Возможности
 
-## Быстрый старт
-
-### 1. Запуск Backend и Recommender через Docker
-
-```bash
-docker-compose up --build
-```
-
-### 2. Запуск Frontend отдельно
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Приложение доступно по адресу http://localhost:5173
-
-### Проверка работоспособности
-
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3000/health
-- Recommender: http://localhost:8000/health
+- Каталог фильмов с поиском, фильтрами и постраничной загрузкой.
+- Главная выдача с weighted-random сортировкой: популярность повышает позицию фильма, но не убирает разнообразие.
+- Регистрация с подтверждением email.
+- Вход по логину или email.
+- Пользовательские списки: избранное, смотреть позже, выбранное, не рекомендовать.
+- Персональные рекомендации на основе избранных фильмов.
+- Fallback на популярные фильмы для новых пользователей.
+- Модальное окно фильма с постером, описанием, метаданными и быстрыми действиями.
 
 ## Архитектура
 
-### Почему фронтенд не в Docker?
+| Часть | Стек | Назначение |
+| --- | --- | --- |
+| Frontend | React 18, Vite | SPA-интерфейс |
+| Backend | Node.js, Express | Auth, каталог, пользовательские списки |
+| Recommender | Python, FastAPI | Рекомендательная логика |
+| movies_db | PostgreSQL | Данные фильмов и поисковые индексы |
+| users_db | PostgreSQL | Пользователи и личные списки |
 
-**Production архитектура:**
-- Frontend собирается в статические файлы (`npm run build`) и раздается через **nginx на хосте**
-- Backend и Recommender работают в **Docker контейнерах**
-- nginx на хосте управляет SSL сертификатами и проксирует запросы к API
+Структура проекта:
 
-**Преимущества такого подхода:**
-- ✅ Максимальная производительность раздачи статики через nginx
-- ✅ Централизованное управление SSL (Let's Encrypt автообновление)
-- ✅ Единая точка входа для всех запросов
-- ✅ Стандартная production практика для SPA приложений
-- ✅ Меньше контейнеров = проще мониторинг
+```text
+frontend/     React-приложение, страницы и компоненты
+backend/      Express API, контроллеры, роуты, подключение к БД
+recommender/  FastAPI-сервис и модель рекомендаций
+movies_db/    init-скрипты и CSV-данные фильмов
+users_db/     init-скрипты пользовательской БД
+nginx/        пример конфигурации reverse proxy
+```
 
-**Development режим:**
-- Frontend запускается локально через `npm run dev` (Vite dev server)
-- Vite автоматически проксирует API запросы к Docker контейнерам
+## Рекомендации
 
-### Схема сервисов
+`recommender/` загружает `movies.csv` и `tfidf.csv` при старте. Рекомендации строятся на похожести фильмов и дополнительно смешиваются с нормализованной популярностью через параметр `alpha`.
 
-| Сервис | Порт | Где работает | Описание |
-|--------|------|--------------|----------|
-| Frontend (dev) | 5173 | Локально | Vite dev server для разработки |
-| Frontend (prod) | 80/443 | nginx на хосте | Статические файлы через nginx |
-| Backend | 3000 | Docker | REST API на Express |
-| Recommender | 8000 | Docker | ML-сервис рекомендаций на FastAPI |
-| movies_db | 5432 | Docker | PostgreSQL с данными фильмов |
-| users_db | 5433 | Docker | PostgreSQL с данными пользователей |
+Главная страница использует deterministic weighted random: seed сохраняет стабильную пагинацию, а `popularity_norm` повышает шанс фильма оказаться выше в списке.
 
-## Разработка
+## Email Verification
 
-### Frontend (отдельно от Docker)
+При регистрации пользователь создаётся в неподтверждённом состоянии. Backend отправляет ссылку подтверждения email через Resend API по HTTPS. SMTP оставлен как fallback для окружений, где он доступен.
+
+Создайте локальный `.env` на основе `.env.example`:
+
+```env
+PUBLIC_APP_URL=https://your-domain.example
+RESEND_API_KEY=your_resend_api_key
+MAIL_FROM="Movie Recommender <noreply@your-domain.example>"
+```
+
+Реальные `.env` файлы и API-ключи нельзя коммитить в репозиторий.
+
+## Быстрый Старт
+
+Запуск backend, recommender и баз данных:
+
+```bash
+docker compose up --build
+```
+
+Запуск frontend в dev-режиме:
 
 ```bash
 cd frontend
@@ -75,169 +72,89 @@ npm install
 npm run dev
 ```
 
-Vite автоматически проксирует запросы:
-- `/api` → http://localhost:3000 (backend)
-- `/recommender` → http://localhost:8000 (ML-сервис)
+Локальные адреса:
 
-### Backend (отдельно от Docker)
+- Frontend: `http://localhost:5173`
+- Backend health check: `http://localhost:3000/health`
+- Recommender health check: `http://localhost:8000/health`
 
-**Важно**: Измени хосты БД на `localhost` в `backend/config/database.js` перед запуском
+Vite dev server проксирует:
+
+- `/api` в backend
+- `/recommender` в recommender
+
+## Проверка
+
+Frontend:
 
 ```bash
-cd backend
-npm install
-node server.js
+cd frontend
+npm run build
 ```
 
-### Recommender (отдельно от Docker)
+Backend:
+
+```bash
+node -c backend/server.js
+node -c backend/controllers/authController.js
+node -c backend/controllers/moviesController.js
+node -c backend/controllers/userListsController.js
+node -c backend/services/emailService.js
+```
+
+Recommender:
 
 ```bash
 cd recommender
-pip install -r requirements.txt
-uvicorn api:app --host 0.0.0.0 --port 8000
+python -m py_compile api.py recommender.py
 ```
 
-## Функциональность
-
-- Регистрация и аутентификация пользователей
-- Каталог фильмов с поиском и пагинацией (40 фильмов на страницу)
-- Добавление фильмов в "Избранное" и "Смотреть позже"
-- Персонализированные рекомендации на основе избранного (до 30000 фильмов)
-- Популярные фильмы для новых пользователей
-- Модальные окна с детальной информацией о фильмах
-
-## API Endpoints
-
-### Аутентификация
-- `POST /api/register` - Регистрация пользователя
-- `POST /api/login` - Вход пользователя
-
-### Фильмы
-- `GET /api/movies?search=query&limit=20&offset=0` - Список фильмов с поиском
-- `GET /api/movies/popular?limit=20&offset=0` - Популярные фильмы
-- `GET /api/movies/:id` - Детали фильма
-- `POST /api/movies/by-ids` - Получить фильмы по массиву ID
-
-### Пользовательские списки
-- `GET /api/favorites/:user_id` - Получить избранное
-- `POST /api/favorites/:user_id` - Добавить в избранное
-- `DELETE /api/favorites/:user_id/:movie_id` - Удалить из избранного
-- `GET /api/watch-later/:user_id` - Получить список "Смотреть позже"
-- `POST /api/watch-later/:user_id` - Добавить в "Смотреть позже"
-- `DELETE /api/watch-later/:user_id/:movie_id` - Удалить из "Смотреть позже"
-
-### ML-рекомендации
-- `POST /recommender/api/recommend` - Рекомендации по tmdb_id
-  ```json
-  {"tmdb_ids": [550, 680], "k": 10, "alpha": 0.75}
-  ```
-- `POST /recommender/api/recommend/by-title` - Рекомендации по названиям
-  ```json
-  {"movies": ["Inception", "Interstellar"], "k": 10, "alpha": 0.75}
-  ```
-
-## Структура проекта
-
-```
-MovieRecommender/
-├── backend/
-│   ├── config/
-│   │   └── database.js       # Подключение к PostgreSQL с retry логикой
-│   ├── controllers/          # Бизнес-логика
-│   │   ├── authController.js
-│   │   ├── moviesController.js
-│   │   ├── userListsController.js
-│   │   └── selectedController.js
-│   ├── routes/              # Express роуты
-│   ├── Dockerfile
-│   └── server.js            # Точка входа
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/           # Home, Recommend, WatchLater, Profile, Auth
-│   │   ├── components/      # Header, MovieCard, MovieModal
-│   │   └── App.jsx
-│   ├── vite.config.js       # Proxy конфигурация
-│   └── package.json
-│
-├── recommender/
-│   ├── api.py               # FastAPI endpoints
-│   ├── recommender.py       # ML модель
-│   ├── requirements.txt
-│   └── Dockerfile
-│
-├── .github/workflows/       # CI/CD конфигурация
-│   ├── backend-ci.yml
-│   ├── frontend-ci.yml
-│   ├── recommender-ci.yml
-│   ├── deploy-backend.yml
-│   ├── deploy-frontend.yml
-│   └── deploy-recommender.yml
-│
-├── nginx/                   # Конфигурация nginx для продакшена
-├── docker-compose.yml
-└── AGENTS.md               # Инструкции для AI агентов
-```
-
-## CI/CD
-
-Проект использует GitHub Actions для автоматического тестирования и деплоя:
-
-### CI (Continuous Integration)
-- Запускается на каждый push/PR в ветки `main` и `develop`
-- Проверяет синтаксис и собирает проект
-- Деплой происходит только если CI тесты прошли успешно
-
-### CD (Continuous Deployment)
-- Автоматический деплой на продакшн при push в `main`
-- Frontend: сборка и копирование в `/var/www/movierecommender/`
-- Backend/Recommender: пересборка Docker контейнеров
-
-**Требуемые GitHub Secrets:**
-- `SERVER_HOST` - IP или hostname сервера
-- `SERVER_USER` - SSH пользователь
-- `SSH_PRIVATE_KEY` - Приватный SSH ключ
-
-Подробнее: `.github/workflows/README.md`
-
-## Продакшн деплой
-
-### Требования
-- Ubuntu 22.04+
-- Docker и Docker Compose
-- Node.js 20+ (для сборки фронтенда)
-- nginx
-- SSL сертификаты (Let's Encrypt)
-
-### Ручной деплой
+Docker Compose:
 
 ```bash
-# Backend и Recommender
-docker-compose up -d --build backend recommender
-
-# Frontend
-cd frontend
-npm install
-npm run build
-sudo cp -r dist/* /var/www/movierecommender/
+docker compose config
 ```
 
-### nginx конфигурация
+## API
 
-nginx проксирует запросы:
-- `/` → статические файлы из `/var/www/movierecommender/`
-- `/api/` → backend:3000
-- `/recommender/` → recommender:8000
+Auth:
 
-Конфигурация: `nginx/movierecommender.icu.conf`
+- `POST /api/register`
+- `POST /api/login`
+- `GET /api/verify-email?token=...`
 
-## Особенности реализации
+Movies:
 
-- **Retry логика**: Backend переподключается к БД до 20 раз с задержкой 2 секунды
-- **Lazy loading**: ML модель загружается при старте recommender сервиса
-- **Client-side пагинация**: Рекомендации загружаются пачкой (k=30000), отображаются по 40
-- **Bulk fetch**: Детали фильмов загружаются пачками через `/api/movies/by-ids`
-- **Fallback**: Если нет избранного, показываются популярные фильмы
+- `GET /api/movies`
+- `GET /api/movies/suggest`
+- `GET /api/movies/filters`
+- `GET /api/movies/popular`
+- `GET /api/movies/:movie_id`
+- `POST /api/movies/by-ids`
+
+User lists:
+
+- `GET|POST /api/favorites/:user_id`
+- `GET|POST /api/watch-later/:user_id`
+- `GET|POST /api/selected/:user_id`
+- `GET|POST /api/disliked/:user_id`
+- `DELETE /api/<list>/:user_id/:movie_id`
+
+Recommendations:
+
+- `POST /recommender/api/recommend`
+- `POST /recommender/api/recommend/by-title`
+
+## Production Notes
+
+В production frontend можно собрать в статические файлы и отдавать через nginx. Backend и recommender пересобираются через Docker Compose:
+
+```bash
+docker compose build --no-cache backend recommender
+docker compose up -d backend recommender
+```
+
+Перед запуском backend на сервере задайте приватный `.env` с `PUBLIC_APP_URL`, `RESEND_API_KEY` и `MAIL_FROM`.
 
 ## Лицензия
 
