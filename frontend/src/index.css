@@ -81,34 +81,6 @@ body::after {
     left: -80px;
 }
 
-.app::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.55;
-    background-image:
-        linear-gradient(135deg, transparent 0 45%, rgba(156, 146, 131, 0.18) 45% 48%, transparent 48% 100%),
-        conic-gradient(from 45deg, rgba(111, 127, 113, 0.16) 0 25%, transparent 25% 100%),
-        radial-gradient(circle, transparent 42%, rgba(156, 146, 131, 0.2) 43% 45%, transparent 46%),
-        repeating-linear-gradient(90deg, rgba(58, 58, 58, 0.07) 0 1px, transparent 1px 22px),
-        repeating-linear-gradient(0deg, rgba(156, 146, 131, 0.06) 0 1px, transparent 1px 22px);
-    background-position:
-        8% 18%,
-        86% 22%,
-        88% 78%,
-        12% 76%,
-        12% 76%;
-    background-size:
-        210px 210px,
-        150px 150px,
-        170px 170px,
-        320px 210px,
-        320px 210px;
-    background-repeat: no-repeat;
-}
-
 a {
     color: var(--color-accent);
     text-decoration: none;
@@ -157,14 +129,14 @@ a:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 64px;
-    gap: 24px;
+    height: 78px;
+    gap: 32px;
 }
 
 .logo {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-weight: 700;
     color: var(--color-primary);
     letter-spacing: 0.01em;
@@ -175,8 +147,8 @@ a:hover {
 }
 
 .logo__mark {
-    width: 38px;
-    height: 38px;
+    width: 46px;
+    height: 46px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -185,7 +157,7 @@ a:hover {
         linear-gradient(135deg, rgba(58, 58, 58, 0.94), rgba(111, 127, 113, 0.88)),
         var(--color-primary);
     color: var(--color-bg);
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     letter-spacing: 0.08em;
     box-shadow: 0 8px 18px rgba(58, 58, 58, 0.16);
 }
@@ -197,12 +169,12 @@ a:hover {
 }
 
 .logo__name {
-    font-size: 1.35rem;
+    font-size: 1.55rem;
 }
 
 .logo__tagline {
     color: var(--color-accent);
-    font-size: 0.62rem;
+    font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -211,13 +183,13 @@ a:hover {
 .nav {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 28px;
 }
 
 .nav__link {
     position: relative;
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: 1.05rem;
+    font-weight: 600;
     color: var(--color-text-secondary);
     transition: color var(--transition);
 }
@@ -240,7 +212,7 @@ a:hover {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -8px;
+    bottom: -10px;
     height: 2px;
     border-radius: 999px;
     background: var(--color-accent);
@@ -250,7 +222,7 @@ a:hover {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 8px 12px;
+    padding: 10px 16px;
     border: 1px solid var(--color-border);
     border-radius: 999px;
     background: rgba(253, 251, 247, 0.66);
@@ -264,8 +236,8 @@ a:hover {
 }
 
 .nav__github-dot {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: var(--color-primary-light);
     box-shadow: 0 0 0 4px rgba(111, 127, 113, 0.16);
@@ -278,13 +250,13 @@ a:hover {
 }
 
 .nav__avatar {
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: var(--color-bg);
     background: var(--color-primary);
@@ -1405,32 +1377,32 @@ a:hover {
     .header__inner {
         flex-direction: column;
         height: auto;
-        padding: 12px 0;
-        gap: 12px;
+        padding: 14px 0;
+        gap: 14px;
     }
 
     .logo__mark {
-        width: 34px;
-        height: 34px;
+        width: 40px;
+        height: 40px;
         border-radius: 12px;
     }
 
     .logo__name {
-        font-size: 1.2rem;
+        font-size: 1.35rem;
     }
 
     .logo__tagline {
-        font-size: 0.56rem;
+        font-size: 0.62rem;
     }
 
     .nav {
-        gap: 10px;
+        gap: 14px;
         flex-wrap: wrap;
         justify-content: center;
     }
 
     .nav__link {
-        font-size: 0.88rem;
+        font-size: 0.96rem;
     }
 
     .nav__link.active::after {
@@ -1438,7 +1410,7 @@ a:hover {
     }
 
     .nav__link--github {
-        padding: 7px 10px;
+        padding: 8px 12px;
     }
 
     .movies-grid {
@@ -1532,16 +1504,6 @@ a:hover {
 }
 
 @media (max-width: 480px) {
-    .app::before {
-        opacity: 0.38;
-        background-size:
-            150px 150px,
-            110px 110px,
-            130px 130px,
-            260px 180px,
-            260px 180px;
-    }
-
     .movies-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
