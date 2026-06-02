@@ -15,7 +15,9 @@ function isValidEmail(email) {
 
 async function deliverVerificationEmail({ email, login, token }) {
     try {
+        console.log(`Sending verification email to ${email}`);
         await sendVerificationEmail({ email, login, token });
+        console.log(`Verification email delivery finished for ${email}`);
     } catch (mailError) {
         console.error('Verification email error:', mailError);
         console.log(`Email verification link for ${email}: ${buildVerificationUrl(token)}`);
@@ -23,8 +25,12 @@ async function deliverVerificationEmail({ email, login, token }) {
 }
 
 function queueVerificationEmail({ email, login, token }) {
+    console.log(`Queued verification email for ${email}`);
     setImmediate(() => {
-        deliverVerificationEmail({ email, login, token });
+        deliverVerificationEmail({ email, login, token }).catch((error) => {
+            console.error('Unexpected verification email queue error:', error);
+            console.log(`Email verification link for ${email}: ${buildVerificationUrl(token)}`);
+        });
     });
 }
 
@@ -76,6 +82,8 @@ async function register(req, res) {
     const email = normalizeEmail(req.body.email);
     const { password } = req.body;
 
+    console.log(`Registration request received for login=${login || '<empty>'}, email=${email || '<empty>'}`);
+
     if (!login || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
@@ -112,6 +120,7 @@ async function register(req, res) {
             if (existingUser.login === login && existingUser.email.toLowerCase() === email && !existingUser.email_verified) {
                 const resentUser = await resendVerificationForExistingUser({ login, email, hashedPassword });
                 if (resentUser) {
+                    console.log(`Verification email re-queued for pending user ${email}`);
                     return res.status(200).json({
                         message: 'Verification email sent again. Please check your inbox.',
                         user: resentUser
@@ -141,6 +150,7 @@ async function register(req, res) {
             [login, email, hashedPassword, verificationToken, EMAIL_VERIFICATION_TTL_HOURS]
         );
 
+        console.log(`Registered pending user ${email}`);
         queueVerificationEmail({ email, login, token: verificationToken });
 
         res.status(201).json({

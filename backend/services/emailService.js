@@ -21,7 +21,10 @@ function createTransporter() {
     const config = {
         host: process.env.SMTP_HOST,
         port,
-        secure: process.env.SMTP_SECURE === 'true' || port === 465
+        secure: process.env.SMTP_SECURE === 'true' || port === 465,
+        connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS) || 10000,
+        greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS) || 10000,
+        socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS) || 15000
     };
 
     if (process.env.SMTP_USER || process.env.SMTP_PASS) {
@@ -61,6 +64,8 @@ async function sendVerificationEmail({ email, login, token }) {
         console.log(`Email verification link for ${email}: ${verifyUrl}`);
         return;
     }
+
+    console.log(`SMTP configured: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT || 587}, secure=${process.env.SMTP_SECURE === 'true'}`);
 
     await transporter.sendMail({
         from: getMailFrom(),
