@@ -247,19 +247,19 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
                   className="btn btn--primary"
                   onClick={isFavorite ? handleRemoveFromFavorites : handleAddToFavorites}
                 >
-                  {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                  {isFavorite ? 'Remove Favourite' : 'Favourite'}
                 </button>
                 <button
                   className="btn btn--secondary"
                   onClick={isWatchLater ? handleRemoveFromWatchLater : handleAddToWatchLater}
                 >
-                  {isWatchLater ? 'Remove from Watch Later' : 'Watch Later'}
+                  {isWatchLater ? 'Remove Watch Later' : 'Watch Later'}
                 </button>
                 <button
                   className="btn btn--secondary"
                   onClick={isSelected ? handleRemoveFromSelected : handleAddToSelected}
                 >
-                  {isSelected ? 'Remove from Selected' : 'Add to Selected'}
+                  {isSelected ? 'Remove Selected' : 'Selected'}
                 </button>
               </div>
             )}

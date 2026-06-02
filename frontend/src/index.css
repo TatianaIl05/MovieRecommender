@@ -865,7 +865,7 @@ a:hover {
 
 .modal__actions .btn {
     flex: 1;
-    min-width: 140px;
+    min-width: 150px;
 }
 
 .modal__actions .btn.modal__dislike-btn {
