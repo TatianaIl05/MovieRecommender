@@ -941,10 +941,16 @@ a:hover {
         flex-direction: column;
     }
 
+    .movies-layout--with-filters {
+        display: block;
+    }
+
     .filters-panel {
         grid-column: auto;
         grid-row: auto;
         position: static;
+        max-height: min(60vh, 520px);
+        overflow-y: auto;
         margin-bottom: 24px;
     }
 
@@ -960,6 +966,17 @@ a:hover {
 
     .modal__info {
         padding: 20px;
+    }
+
+    .modal__actions {
+        flex-direction: column;
+    }
+
+    .modal__actions .btn,
+    .modal__actions .btn.modal__dislike-btn {
+        flex: none;
+        width: 100%;
+        min-width: 0;
     }
 }
 
