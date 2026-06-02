@@ -37,6 +37,28 @@ function createTransporter() {
     return nodemailer.createTransport(config);
 }
 
+async function sendViaResend({ email, text, html }) {
+    const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            from: getMailFrom(),
+            to: [email],
+            subject: 'Confirm your Movie Recommender email',
+            html,
+            text
+        })
+    });
+
+    if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`Resend email failed with status ${response.status}: ${body}`);
+    }
+}
+
 async function sendVerificationEmail({ email, login, token }) {
     const verifyUrl = buildVerificationUrl(token);
     const text = [
@@ -60,6 +82,12 @@ async function sendVerificationEmail({ email, login, token }) {
     `;
 
     const transporter = createTransporter();
+    if (process.env.RESEND_API_KEY) {
+        console.log(`Resend configured: sender=${getMailFrom()}`);
+        await sendViaResend({ email, text, html });
+        return;
+    }
+
     if (!transporter) {
         console.log(`Email verification link for ${email}: ${verifyUrl}`);
         return;

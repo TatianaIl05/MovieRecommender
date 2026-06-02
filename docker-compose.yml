@@ -39,6 +39,7 @@ services:
     environment:
       NODE_ENV: production
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://movierecommender.icu}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
