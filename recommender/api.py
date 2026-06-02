@@ -42,13 +42,13 @@ app.add_middleware(
 class TmdbIdsRequest(BaseModel):
     tmdb_ids: list[int]
     k: int = 10
-    alpha: float = 0.6
+    alpha: float = 0.75
 
 
 class MultiMovieRequest(BaseModel):
     movies: list[str]
     k: int = 10
-    alpha: float = 0.6
+    alpha: float = 0.75
 
 
 def get_recommender(request: Request) -> Recommender:

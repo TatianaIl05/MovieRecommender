@@ -139,7 +139,7 @@ function buildMoviesOrderClause(searchParam, shuffleParam) {
             const seededRandom = buildSeededRandomExpression(shuffleParam);
             return `
                 ORDER BY
-                    (-ln(${seededRandom}) / (0.3 + GREATEST(COALESCE(popularity_norm, 0), 0))) ASC,
+                    (-ln(${seededRandom}) / (0.05 + GREATEST(COALESCE(popularity_norm, 0), 0))) ASC,
                     popularity_norm DESC NULLS LAST,
                     vote_average DESC NULLS LAST
             `;
