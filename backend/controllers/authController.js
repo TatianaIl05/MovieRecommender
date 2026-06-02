@@ -39,7 +39,7 @@ async function resendVerificationForExistingUser({ login, email, hashedPassword 
     );
 
     const user = existing.rows[0];
-    if (!user || user.email_verified || user.login !== login || user.email !== email) {
+    if (!user || user.email_verified || user.login !== login || user.email.toLowerCase() !== email) {
         return null;
     }
 
@@ -86,6 +86,37 @@ async function register(req, res) {
 
     try {
         hashedPassword = await bcrypt.hash(password, 10);
+        const existing = await users_pool.query(
+            `
+                SELECT id, login, email, email_verified
+                FROM users
+                WHERE login = $1 OR lower(email) = lower($2)
+                ORDER BY CASE
+                    WHEN login = $1 AND lower(email) = lower($2) THEN 0
+                    WHEN login = $1 THEN 1
+                    ELSE 2
+                END
+                LIMIT 1
+            `,
+            [login, email]
+        );
+
+        const existingUser = existing.rows[0];
+        if (existingUser) {
+            if (existingUser.login === login && existingUser.email.toLowerCase() === email && !existingUser.email_verified) {
+                const resentUser = await resendVerificationForExistingUser({ login, email, hashedPassword });
+                if (resentUser) {
+                    return res.status(200).json({
+                        message: 'Verification email sent again. Please check your inbox.',
+                        user: resentUser
+                    });
+                }
+            }
+
+            const field = existingUser.login === login ? 'login' : 'email';
+            return res.status(409).json({ error: `User with this ${field} already exists` });
+        }
+
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
         const result = await users_pool.query(
