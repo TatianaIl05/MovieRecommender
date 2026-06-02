@@ -1059,6 +1059,66 @@ a:hover {
     -webkit-mask: url('./assets/dislike.svg') center / contain no-repeat;
 }
 
+/* ===== Footer ===== */
+.footer {
+    background: rgba(58, 58, 58, 0.85);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-bg);
+    margin-top: 48px;
+    position: relative;
+    z-index: 1;
+}
+
+.footer__inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 32px;
+    padding: 40px 20px;
+}
+
+.footer__title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--color-bg);
+}
+
+.footer__text {
+    color: rgba(253, 251, 247, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.footer__subtitle {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    color: rgba(253, 251, 247, 0.6);
+}
+
+.footer__link {
+    color: rgba(253, 251, 247, 0.8);
+    font-size: 0.95rem;
+    transition: color var(--transition);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.footer__link:hover {
+    color: var(--color-bg);
+}
+
+.footer__bottom {
+    border-top: 1px solid rgba(217, 207, 193, 0.2);
+    padding: 16px 0;
+    text-align: center;
+    color: rgba(253, 251, 247, 0.5);
+    font-size: 0.85rem;
+}
+
 /* ===== Utility ===== */
 .hidden {
     display: none !important;
@@ -1141,6 +1201,16 @@ a:hover {
         flex: none;
         width: 100%;
         min-width: 0;
+    }
+
+    .footer__inner {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        text-align: center;
+    }
+
+    .footer__section {
+        padding: 0;
     }
 }
 

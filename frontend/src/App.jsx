@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
+import Footer from './components/Footer'
 import Home from './pages/Home'
 import Auth from './pages/Auth'
 import Profile from './pages/Profile'
@@ -109,6 +110,7 @@ function App() {
             <Route path="/selected" element={user ? <Selected user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   )
