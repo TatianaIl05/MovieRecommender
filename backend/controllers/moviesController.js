@@ -129,10 +129,20 @@ function buildMoviesWhereClause(filters) {
     };
 }
 
+function buildSeededRandomExpression(shuffleParam) {
+    return `((('x' || substr(md5(id::text || ${shuffleParam}), 1, 8))::bit(32)::bigint + 1)::double precision / 4294967297.0)`;
+}
+
 function buildMoviesOrderClause(searchParam, shuffleParam) {
     if (!searchParam) {
         if (shuffleParam) {
-            return `ORDER BY md5(id::text || ${shuffleParam}), popularity_norm DESC NULLS LAST`;
+            const seededRandom = buildSeededRandomExpression(shuffleParam);
+            return `
+                ORDER BY
+                    (-ln(${seededRandom}) / (0.15 + GREATEST(COALESCE(popularity_norm, 0), 0))) ASC,
+                    popularity_norm DESC NULLS LAST,
+                    vote_average DESC NULLS LAST
+            `;
         }
 
         return 'ORDER BY popularity_norm DESC NULLS LAST, vote_average DESC NULLS LAST';
