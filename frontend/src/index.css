@@ -308,6 +308,9 @@ a:hover {
     grid-row: 1;
     position: sticky;
     top: 88px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 18px;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);

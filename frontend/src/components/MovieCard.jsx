@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import moviePlaceholder from '../assets/movie-placeholder.svg'
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w500'
 
@@ -11,13 +12,21 @@ function MovieCard({ movie, onClick, onRemove, showRemove = false }) {
     return `${TMDB_IMG_BASE}${path}`
   }
 
+  const posterUrl = getPosterUrl(movie.poster_path) || moviePlaceholder
+
   return (
     <div className="movie-card" onClick={onClick}>
       <img
         className={`movie-card__poster ${!posterLoaded ? 'movie-card__poster--placeholder' : ''}`}
-        src={getPosterUrl(movie.poster_path)}
-        alt={movie.title}
+        src={posterUrl}
+        alt={movie.title || 'Movie poster'}
         onLoad={() => setPosterLoaded(true)}
+        onError={(e) => {
+          if (!e.currentTarget.dataset.fallback) {
+            e.currentTarget.dataset.fallback = 'true'
+            e.currentTarget.src = moviePlaceholder
+          }
+        }}
       />
       <div className="movie-card__title">{movie.title || 'No Title'}</div>
       {showRemove && (

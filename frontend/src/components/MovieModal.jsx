@@ -1,3 +1,5 @@
+import moviePlaceholder from '../assets/movie-placeholder.svg'
+
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w1280'
 
 function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked }) {
@@ -191,15 +193,24 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
   const isWatchLater = watchLater.has(movie.id)
   const isSelected = selected?.has(movie.id)
   const isDisliked = disliked?.has(movie.id)
+  const posterUrl = getPosterUrl(movie.poster_path) || moviePlaceholder
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <button className="modal__close" onClick={onClose}>&times;</button>
         <div className="modal__content">
-          {movie.poster_path && (
-            <img className="modal__poster" src={getPosterUrl(movie.poster_path)} alt={movie.title} />
-          )}
+          <img
+            className="modal__poster"
+            src={posterUrl}
+            alt={movie.title || 'Movie poster'}
+            onError={(e) => {
+              if (!e.currentTarget.dataset.fallback) {
+                e.currentTarget.dataset.fallback = 'true'
+                e.currentTarget.src = moviePlaceholder
+              }
+            }}
+          />
           <div className="modal__info">
             <h2 className="modal__title">{movie.title || 'No Title'}</h2>
             
