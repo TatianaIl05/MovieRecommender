@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import MovieCard from '../components/MovieCard'
+import MovieGridSkeleton from '../components/MovieGridSkeleton'
 import MovieModal from '../components/MovieModal'
 
 const RECOMMENDER_URL = '/recommender'
@@ -164,12 +165,7 @@ function Recommend({ user, favorites, setFavorites, watchLater, setWatchLater, s
         </div>
       )}
 
-      {loading && movies.length === 0 && (
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>{noFavorites ? 'Loading popular movies...' : 'Finding recommendations...'}</p>
-        </div>
-      )}
+      {loading && movies.length === 0 && <MovieGridSkeleton count={12} />}
 
       {error && !loading && (
         <p className="empty-state">{error}</p>

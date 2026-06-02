@@ -1,6 +1,6 @@
 import moviePlaceholder from '../assets/movie-placeholder.svg'
 
-const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w1280'
+const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w780'
 
 function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater, setWatchLater, selected, setSelected, disliked, setDisliked }) {
   if (!movie) return null
@@ -204,6 +204,7 @@ function MovieModal({ movie, onClose, user, favorites, setFavorites, watchLater,
             className="modal__poster"
             src={posterUrl}
             alt={movie.title || 'Movie poster'}
+            decoding="async"
             onError={(e) => {
               if (!e.currentTarget.dataset.fallback) {
                 e.currentTarget.dataset.fallback = 'true'

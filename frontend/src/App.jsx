@@ -1,14 +1,24 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { Suspense, lazy, useState, useEffect } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
-import Home from './pages/Home'
-import Auth from './pages/Auth'
-import Profile from './pages/Profile'
-import Recommend from './pages/Recommend'
-import WatchLater from './pages/WatchLater'
-import Selected from './pages/Selected'
-import VerifyEmail from './pages/VerifyEmail'
+
+const Home = lazy(() => import('./pages/Home'))
+const Auth = lazy(() => import('./pages/Auth'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Recommend = lazy(() => import('./pages/Recommend'))
+const WatchLater = lazy(() => import('./pages/WatchLater'))
+const Selected = lazy(() => import('./pages/Selected'))
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
+
+function PageFallback() {
+  return (
+    <div className="loading">
+      <div className="spinner"></div>
+      <p>Loading...</p>
+    </div>
+  )
+}
 
 const MOVIE_CACHE_KEY = 'movieCache'
 const MOVIE_CACHE_TTL = 15 * 60 * 1000
@@ -100,15 +110,17 @@ function App() {
       <div className="app">
         <Header user={user} setUser={setUser} setFavorites={setFavorites} setWatchLater={setWatchLater} setSelected={setSelected} setDisliked={setDisliked} setMovieCache={setMovieCache} />
         <main className="main">
-          <Routes>
-            <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} />} />
-            <Route path="/auth" element={<Auth setUser={setUser} />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
-            <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} /> : <Navigate to="/auth" />} />
-            <Route path="/watch-later" element={user ? <WatchLater user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
-            <Route path="/selected" element={user ? <Selected user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
-          </Routes>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<Home user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} />} />
+              <Route path="/auth" element={<Auth setUser={setUser} />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/profile" element={user ? <Profile user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
+              <Route path="/recommend" element={user ? <Recommend user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} /> : <Navigate to="/auth" />} />
+              <Route path="/watch-later" element={user ? <WatchLater user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
+              <Route path="/selected" element={user ? <Selected user={user} favorites={favorites} setFavorites={setFavorites} watchLater={watchLater} setWatchLater={setWatchLater} selected={selected} setSelected={setSelected} disliked={disliked} setDisliked={setDisliked} movieCache={movieCache} setMovieCache={setMovieCache} /> : <Navigate to="/auth" />} />
+            </Routes>
+          </Suspense>
         </main>
         <Footer />
       </div>

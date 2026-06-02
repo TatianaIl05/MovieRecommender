@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import moviePlaceholder from '../assets/movie-placeholder.svg'
 
-const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w500'
+const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w342'
 
 function MovieCard({ movie, onClick, onRemove, showRemove = false }) {
   const [posterLoaded, setPosterLoaded] = useState(false)
@@ -20,6 +20,8 @@ function MovieCard({ movie, onClick, onRemove, showRemove = false }) {
         className={`movie-card__poster ${!posterLoaded ? 'movie-card__poster--placeholder' : ''}`}
         src={posterUrl}
         alt={movie.title || 'Movie poster'}
+        loading="lazy"
+        decoding="async"
         onLoad={() => setPosterLoaded(true)}
         onError={(e) => {
           if (!e.currentTarget.dataset.fallback) {
@@ -44,4 +46,4 @@ function MovieCard({ movie, onClick, onRemove, showRemove = false }) {
   )
 }
 
-export default MovieCard
+export default memo(MovieCard)

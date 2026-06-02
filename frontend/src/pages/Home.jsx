@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import MovieCard from '../components/MovieCard'
+import MovieGridSkeleton from '../components/MovieGridSkeleton'
 import MovieModal from '../components/MovieModal'
 
 const emptyFilters = {
@@ -93,6 +94,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const [movies, setMovies] = useState([])
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [selectedMovie, setSelectedMovie] = useState(null)
   const [search, setSearch] = useState(initialSearch)
   const [searchInput, setSearchInput] = useState(initialSearch)
@@ -107,10 +109,14 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
   const appliedFilters = getFiltersFromParams(searchParams)
 
   useEffect(() => {
-    loadFilterOptions()
+    const controller = new AbortController()
+    loadFilterOptions(controller.signal)
+
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
     const nextSearch = searchParams.get('search') || ''
     const nextFilters = getFiltersFromParams(searchParams)
 
@@ -119,7 +125,9 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     setFilters(nextFilters)
     setOffset(0)
     setHasMore(true)
-    loadMovies(true, nextSearch, nextFilters)
+    loadMovies(true, nextSearch, nextFilters, controller.signal)
+
+    return () => controller.abort()
   }, [searchParams])
 
   useEffect(() => {
@@ -151,17 +159,21 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
     }
   }, [searchInput])
 
-  const loadFilterOptions = async () => {
+  const loadFilterOptions = async (signal) => {
     try {
-      const res = await fetch('/api/movies/filters')
+      const res = await fetch('/api/movies/filters', { signal })
       const data = await res.json()
       setFilterOptions(data)
     } catch (err) {
-      console.error('Error loading filters:', err)
+      if (err.name !== 'AbortError') {
+        console.error('Error loading filters:', err)
+      }
     }
   }
 
-  const loadMovies = async (reset = false, searchTerm = search, activeFilters = filters) => {
+  const loadMovies = async (reset = false, searchTerm = search, activeFilters = filters, signal) => {
+    setIsLoading(true)
+
     try {
       const currentOffset = reset ? 0 : offset
       const res = await fetch(buildMoviesUrl({
@@ -170,7 +182,7 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
         search: searchTerm,
         filters: activeFilters,
         randomSeed
-      }))
+      }), { signal })
       const data = await res.json()
       const nextMovies = data.movies || []
 
@@ -184,7 +196,13 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
 
       setHasMore(data.hasMore !== false)
     } catch (err) {
-      console.error('Error loading movies:', err)
+      if (err.name !== 'AbortError') {
+        console.error('Error loading movies:', err)
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -497,15 +515,19 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
             </div>
           )}
 
-          <div className="movies-grid">
-            {movies.map((movie) => (
-              <MovieCard
-                key={movie.id}
-                movie={movie}
-                onClick={() => handleMovieClick(movie)}
-              />
-            ))}
-          </div>
+          {isLoading && movies.length === 0 ? (
+            <MovieGridSkeleton count={12} />
+          ) : (
+            <div className="movies-grid">
+              {movies.map((movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  onClick={() => handleMovieClick(movie)}
+                />
+              ))}
+            </div>
+          )}
 
           {movies.length === 0 && !hasMore && (
             <p className="movies-empty">No movies found for these search filters.</p>
@@ -513,8 +535,8 @@ function Home({ user, favorites, setFavorites, watchLater, setWatchLater, select
 
           {hasMore && movies.length > 0 && (
             <div className="pagination">
-              <button className="btn btn--secondary" onClick={() => loadMovies()}>
-                Load More
+              <button className="btn btn--secondary" onClick={() => loadMovies()} disabled={isLoading}>
+                {isLoading ? 'Loading...' : 'Load More'}
               </button>
             </div>
           )}
