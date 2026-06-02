@@ -1,10 +1,38 @@
 # ==================== recommender.py ====================
+import time
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from pathlib import Path
 from typing import List, Dict
+
+
+class TimedCache:
+    def __init__(self, ttl_seconds=300, max_size=1000):
+        self.ttl = ttl_seconds
+        self.max_size = max_size
+        self._cache = {}
+
+    def _make_key(self, *args, **kwargs):
+        return hash((args, tuple(sorted(kwargs.items()))))
+
+    def get(self, *args, **kwargs):
+        key = self._make_key(*args, **kwargs)
+        entry = self._cache.get(key)
+        if not entry:
+            return None
+        if time.time() - entry['time'] > self.ttl:
+            del self._cache[key]
+            return None
+        return entry['value']
+
+    def set(self, value, *args, **kwargs):
+        key = self._make_key(*args, **kwargs)
+        self._cache[key] = {'value': value, 'time': time.time()}
+        if len(self._cache) > self.max_size:
+            oldest = min(self._cache, key=lambda k: self._cache[k]['time'])
+            del self._cache[oldest]
 
 
 class Recommender:
@@ -17,7 +45,6 @@ class Recommender:
             raise FileNotFoundError(f"Не найден датасет TMDB: {self.tmdb_path}")
         if not self.target_cols_path.exists():
             raise FileNotFoundError(f"Не найден tfidf.csv: {self.target_cols_path}")
-
 
         print("Загрузка TMDB датасета...")
         self.tmdb = pd.read_csv(self.tmdb_path, low_memory=False)
@@ -47,6 +74,7 @@ class Recommender:
 
         self.tmdb.index = self.tmdb.index.astype(int)
 
+        self._recommendation_cache = TimedCache(ttl_seconds=300, max_size=1000)
 
     def get_recommendations_by_tmdb_ids(self, tmdb_ids: List[int], k: int = 10, alpha: float = 0.75) -> List[Dict]:
         """
@@ -55,6 +83,11 @@ class Recommender:
         """
         if not tmdb_ids:
             return []
+
+        cache_key = (tuple(sorted(tmdb_ids)), k, alpha)
+        cached = self._recommendation_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
         valid_ids = [tid for tid in tmdb_ids if tid in self.tmdb.index]
         if not valid_ids:
@@ -87,8 +120,7 @@ class Recommender:
         result_tmdb_ids = self.tmdb.index.values[top_k]
         result_titles = self.tmdb['title'].values[top_k]
 
-
-        return [
+        result = [
             {
                 "tmdb_id": int(result_tmdb_ids[i]),
                 "title": str(result_titles[i]),
@@ -96,9 +128,20 @@ class Recommender:
             for i in range(len(top_k))
         ]
 
+        self._recommendation_cache.set(result, cache_key)
+        return result
+
 
     def get_k_movies_multi(self, titles: List[str], k: int = 10, alpha=0.75) -> List[Dict]:
         """Обёртка: ищет tmdb_id по названиям и делегирует."""
+        if not titles:
+            return []
+
+        cache_key = (tuple(sorted(t.lower() for t in titles)), k, alpha)
+        cached = self._recommendation_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         tmdb_ids = []
         for title in titles:
             match = self.tmdb[self.tmdb['title'].str.contains(title, case=False, na=False)]
@@ -108,4 +151,6 @@ class Recommender:
         if not tmdb_ids:
             return []
 
-        return self.get_recommendations_by_tmdb_ids(tmdb_ids, k, alpha)
+        result = self.get_recommendations_by_tmdb_ids(tmdb_ids, k, alpha)
+        self._recommendation_cache.set(result, cache_key)
+        return result
