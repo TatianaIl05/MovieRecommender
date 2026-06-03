@@ -283,7 +283,7 @@ a:hover {
 /* ===== Home Hero ===== */
 .home-hero {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     margin-bottom: 34px;
     padding: 42px;
     background:
@@ -297,12 +297,13 @@ a:hover {
 .home-hero::after {
     content: '';
     position: absolute;
-    right: -90px;
-    top: -120px;
+    right: 28px;
+    top: 28px;
     width: 280px;
     height: 280px;
     border: 1px solid rgba(156, 146, 131, 0.35);
     border-radius: 50%;
+    pointer-events: none;
 }
 
 .home-hero__eyebrow {
